@@ -32,3 +32,19 @@ A beginner-intermediate Vue portfolio project inspired by Netflix and IMDb.
    ```
 
 If no API key is present, the app uses sample movie data so the UI still works.
+
+## GitHub Pages
+
+This app is configured for a GitHub Pages project site at:
+
+```text
+https://YOUR_USERNAME.github.io/MovieDiscovery/
+```
+
+Deploy with:
+
+```bash
+npm run deploy
+```
+
+In the GitHub repo settings, set Pages to deploy from the `gh-pages` branch.
