@@ -111,7 +111,7 @@ select {
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 240px) minmax(190px, 240px);
   gap: 1rem;
 }
 

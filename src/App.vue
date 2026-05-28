@@ -57,6 +57,16 @@
             <option value="">All genres</option>
             <option v-for="genre in genres" :key="genre.id" :value="genre.id">{{ genre.name }}</option>
           </select>
+
+          <select v-model="sortOption" class="form-select form-select-lg sort-select" aria-label="Sort movies">
+            <option value="year">Year</option>
+            <option value="rating-desc">Highest rating</option>
+            <option value="rating-asc">Lowest rating</option>
+            <option value="runtime-desc">Longest runtime</option>
+            <option value="runtime-asc">Lowest runtime</option>
+            <option value="title-asc">Alphabetical A-Z</option>
+            <option value="title-desc">Alphabetical Z-A</option>
+          </select>
         </div>
 
         <div v-if="authError" class="alert alert-warning auth-alert" role="alert">
@@ -74,11 +84,11 @@
         </div>
 
         <div v-if="loading" class="loading-state">Loading movies...</div>
-        <div v-else-if="filteredMovies.length === 0" class="empty-state">
+        <div v-else-if="sortedMovies.length === 0" class="empty-state">
           No movies found. Try another search or genre.
         </div>
         <div v-else class="row g-4">
-          <div v-for="movie in filteredMovies" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
+          <div v-for="movie in sortedMovies" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
             <MovieCard
               :movie="movie"
               :is-watchlisted="isWatchlisted(movie.id)"
@@ -241,7 +251,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import MovieCard from './components/MovieCard.vue';
 import {
   getGenres,
@@ -266,6 +276,7 @@ const watchlist = ref(JSON.parse(localStorage.getItem('movie-watchlist') || '[]'
 const currentUser = ref(null);
 const searchTerm = ref('');
 const selectedGenre = ref('');
+const sortOption = ref('year');
 const selectedMovie = ref(null);
 const selectedPerson = ref(null);
 const loading = ref(true);
@@ -274,6 +285,7 @@ const personLoading = ref(false);
 const recommendations = ref([]);
 const recommendationsLoading = ref(false);
 const viewMode = ref('home');
+const runtimeByMovieId = ref({});
 let recommendationsRequestId = 0;
 let personRequestId = 0;
 let unsubscribeFromUser = null;
@@ -290,6 +302,30 @@ const filteredMovies = computed(() => {
   return visibleMovies.value.filter((movie) => {
     const ids = movie.genre_ids || movie.genres?.map((genre) => genre.id) || [];
     return ids.includes(Number(selectedGenre.value));
+  });
+});
+
+const sortedMovies = computed(() => {
+  const moviesToSort = [...filteredMovies.value];
+
+  return moviesToSort.sort((a, b) => {
+    switch (sortOption.value) {
+      case 'rating-desc':
+        return scoreFor(b) - scoreFor(a);
+      case 'rating-asc':
+        return scoreFor(a) - scoreFor(b);
+      case 'runtime-desc':
+        return runtimeForSort(b, -1) - runtimeForSort(a, -1);
+      case 'runtime-asc':
+        return runtimeForSort(a, Number.MAX_SAFE_INTEGER) - runtimeForSort(b, Number.MAX_SAFE_INTEGER);
+      case 'title-asc':
+        return titleFor(a).localeCompare(titleFor(b));
+      case 'title-desc':
+        return titleFor(b).localeCompare(titleFor(a));
+      case 'year':
+      default:
+        return yearFor(b) - yearFor(a);
+    }
   });
 });
 
@@ -342,6 +378,26 @@ function persistGuestWatchlist() {
 
 function isWatchlisted(id) {
   return watchlist.value.some((movie) => movie.id === id);
+}
+
+function scoreFor(movie) {
+  return Number(movie.vote_average || movie.rating || 0);
+}
+
+function yearFor(movie) {
+  return Number(movie.release_date?.slice(0, 4) || movie.year || 0);
+}
+
+function titleFor(movie) {
+  return movie.title || movie.name || '';
+}
+
+function runtimeFor(movie) {
+  return Number(runtimeByMovieId.value[movie.id] || movie.runtime || 0);
+}
+
+function runtimeForSort(movie, fallback) {
+  return runtimeFor(movie) || fallback;
 }
 
 async function toggleWatchlist(movie) {
@@ -451,9 +507,40 @@ async function loadRecommendations() {
   recommendationsLoading.value = false;
 }
 
+async function loadRuntimesForCurrentMovies() {
+  if (!sortOption.value.startsWith('runtime')) {
+    return;
+  }
+
+  const moviesMissingRuntime = filteredMovies.value
+    .filter((movie) => !runtimeFor(movie))
+    .slice(0, 30);
+
+  if (!moviesMissingRuntime.length) {
+    return;
+  }
+
+  const details = await Promise.all(moviesMissingRuntime.map((movie) => getMovieDetails(movie.id)));
+  const nextRuntimeByMovieId = { ...runtimeByMovieId.value };
+
+  details.forEach((movie) => {
+    if (movie?.runtime) {
+      nextRuntimeByMovieId[movie.id] = movie.runtime;
+    }
+  });
+
+  runtimeByMovieId.value = nextRuntimeByMovieId;
+}
+
 async function openDetails(movie) {
   const details = await getMovieDetails(movie.id);
   selectedMovie.value = details || movie;
+  if (details?.runtime) {
+    runtimeByMovieId.value = {
+      ...runtimeByMovieId.value,
+      [details.id]: details.runtime
+    };
+  }
   selectedPerson.value = null;
   window.history.pushState({}, '', `#movie-${movie.id}`);
 }
@@ -529,6 +616,10 @@ onMounted(async () => {
   loadRecommendations();
   await syncDetailsFromHash();
   window.addEventListener('popstate', syncDetailsFromHash);
+});
+
+watch([sortOption, filteredMovies], () => {
+  loadRuntimesForCurrentMovies();
 });
 
 onUnmounted(() => {

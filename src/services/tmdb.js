@@ -22,6 +22,7 @@ export const fallbackMovies = [
     backdrop_path: '/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg',
     release_date: '2010-07-16',
     vote_average: 8.4,
+    runtime: 148,
     genre_ids: [28, 878, 53],
     credits: {
       cast: [
@@ -40,6 +41,7 @@ export const fallbackMovies = [
     backdrop_path: '/xJHokMbljvjADYdit5fK5VQsXEG.jpg',
     release_date: '2014-11-07',
     vote_average: 8.5,
+    runtime: 169,
     genre_ids: [12, 18, 878],
     credits: {
       cast: [
@@ -58,6 +60,7 @@ export const fallbackMovies = [
     backdrop_path: '/ApiBzeaa95TNYliSbQ8pJv4Fje7.jpg',
     release_date: '2019-05-30',
     vote_average: 8.5,
+    runtime: 133,
     genre_ids: [18, 53],
     credits: {
       cast: [
@@ -76,6 +79,7 @@ export const fallbackMovies = [
     backdrop_path: '/mSDsSDwaP3E7dEfUPWy4J0djt4O.jpg',
     release_date: '2001-07-20',
     vote_average: 8.5,
+    runtime: 125,
     genre_ids: [12, 16],
     credits: {
       cast: [
@@ -133,6 +137,32 @@ function normalizePerson(person) {
   };
 }
 
+function searchAliasesFor(query) {
+  const normalizedQuery = query.toLowerCase().trim();
+  const aliases = [];
+
+  if (normalizedQuery.includes('star wars')) {
+    aliases.push('mandalorian grogu');
+  }
+
+  return aliases;
+}
+
+function mergeUniqueMovies(movieGroups) {
+  const seen = new Set();
+
+  return movieGroups
+    .flat()
+    .filter((movie) => {
+      if (seen.has(movie.id)) {
+        return false;
+      }
+
+      seen.add(movie.id);
+      return true;
+    });
+}
+
 async function request(path, params = {}) {
   if (!API_KEY) {
     throw new Error('Missing TMDB API key');
@@ -169,11 +199,18 @@ export async function searchMovies(query) {
   }
 
   try {
-    const data = await request('/search/movie', {
-      query,
-      include_adult: 'false'
-    });
-    return data.results.map(normalizeMovie);
+    const searches = [query, ...searchAliasesFor(query)];
+    const results = await Promise.all(
+      searches.map(async (searchQuery) => {
+        const data = await request('/search/movie', {
+          query: searchQuery,
+          include_adult: 'false'
+        });
+        return data.results || [];
+      })
+    );
+
+    return mergeUniqueMovies(results).map(normalizeMovie);
   } catch {
     const lowerQuery = query.toLowerCase();
     return fallbackMovies
