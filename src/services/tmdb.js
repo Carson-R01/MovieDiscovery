@@ -123,6 +123,16 @@ function normalizeMovie(movie) {
   };
 }
 
+function normalizePerson(person) {
+  return {
+    ...person,
+    profileUrl: profileUrl(person.profile_path),
+    movieCredits: {
+      cast: person.movie_credits?.cast?.map(normalizeMovie) || []
+    }
+  };
+}
+
 async function request(path, params = {}) {
   if (!API_KEY) {
     throw new Error('Missing TMDB API key');
@@ -230,5 +240,35 @@ export async function getWatchlistRecommendations(watchlist) {
       .filter((movie) => !watchlistIds.has(movie.id))
       .filter((movie) => movie.genre_ids.some((genreId) => likedGenres.has(genreId)))
       .map(normalizeMovie);
+  }
+}
+
+export async function getPersonProfile(id) {
+  try {
+    const data = await request(`/person/${id}`, {
+      append_to_response: 'movie_credits'
+    });
+    return normalizePerson(data);
+  } catch {
+    const castMember = fallbackMovies
+      .flatMap((movie) => movie.credits?.cast || [])
+      .find((person) => person.id === Number(id));
+
+    if (!castMember) {
+      return null;
+    }
+
+    const relatedMovies = fallbackMovies.filter((movie) =>
+      movie.credits?.cast?.some((person) => person.id === Number(id))
+    );
+
+    return normalizePerson({
+      ...castMember,
+      biography: 'Biography details are available from TMDB when an API key is configured.',
+      known_for_department: 'Acting',
+      movie_credits: {
+        cast: relatedMovies
+      }
+    });
   }
 }

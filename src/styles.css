@@ -49,6 +49,39 @@ select {
   font-weight: 800;
 }
 
+.nav-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.account-pill {
+  display: flex;
+  max-width: min(100%, 28rem);
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.35rem 0.35rem 0.35rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(12, 16, 22, 0.76);
+}
+
+.account-pill span {
+  overflow: hidden;
+  max-width: 12rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-avatar {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .hero-content {
   max-width: 1180px;
   padding-top: clamp(4rem, 10vw, 8rem);
@@ -71,7 +104,8 @@ select {
 }
 
 .content-band,
-.detail-page {
+.detail-page,
+.profile-page {
   background: var(--page-bg);
 }
 
@@ -98,6 +132,12 @@ select {
 .form-select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.18);
+}
+
+.auth-alert {
+  border-color: rgba(255, 193, 7, 0.38);
+  background: rgba(255, 193, 7, 0.14);
+  color: #ffe8a3;
 }
 
 .section-kicker {
@@ -164,11 +204,19 @@ select {
   border-top: 1px solid #26303f;
 }
 
-.detail-page {
+.detail-page,
+.profile-page {
   position: fixed;
   inset: 0;
-  z-index: 20;
   overflow-y: auto;
+}
+
+.detail-page {
+  z-index: 20;
+}
+
+.profile-page {
+  z-index: 30;
 }
 
 .detail-poster {
@@ -194,9 +242,26 @@ select {
 .cast-card {
   overflow: hidden;
   min-width: 0;
+  padding: 0;
   border: 1px solid #26303f;
   border-radius: 8px;
   background: var(--panel-bg);
+  color: var(--text-main);
+  text-align: left;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.cast-card:hover,
+.cast-card:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.cast-card:focus-visible {
+  outline: 3px solid rgba(255, 193, 7, 0.28);
+  outline-offset: 2px;
 }
 
 .cast-photo {
@@ -231,6 +296,22 @@ select {
   line-height: 1.35;
 }
 
+.profile-photo-placeholder {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--panel-bg-strong);
+  color: var(--accent);
+  font-size: 3rem;
+  font-weight: 800;
+}
+
+.profile-bio {
+  max-width: 900px;
+}
+
 @media (max-width: 767px) {
   .hero,
   .hero-overlay {
@@ -248,6 +329,15 @@ select {
 
   .hero h1 {
     font-size: 3rem;
+  }
+
+  .nav-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .account-pill {
+    width: 100%;
   }
 
   .cast-grid {
