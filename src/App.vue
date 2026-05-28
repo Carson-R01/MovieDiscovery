@@ -127,8 +127,26 @@
     <section v-if="selectedMovie" class="detail-page">
       <div class="container py-5">
         <button class="btn btn-outline-light mb-4" type="button" @click="closeDetails">Back</button>
+
+        <div class="detail-trailer-hero mb-4">
+          <iframe
+            v-if="selectedMovie.trailer"
+            :src="selectedMovie.trailer.embedUrl"
+            :title="`${selectedMovie.title} trailer`"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+          ></iframe>
+          <div
+            v-else
+            class="detail-trailer-fallback"
+            :style="{ backgroundImage: selectedMovie.backdropUrl ? `url(${selectedMovie.backdropUrl})` : '' }"
+          >
+            <span>No trailer available</span>
+          </div>
+        </div>
+
         <div class="row g-4 align-items-start">
-          <div class="col-md-4 col-lg-3">
+          <div class="col-md-4 col-lg-3 detail-poster-column">
             <img
               v-if="selectedMovie.posterUrl"
               class="detail-poster"

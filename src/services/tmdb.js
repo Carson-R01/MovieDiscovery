@@ -111,6 +111,25 @@ function normalizeCastMember(member) {
   };
 }
 
+function trailerFromVideos(videos = {}) {
+  const youtubeVideos = videos.results?.filter((video) => video.site === 'YouTube') || [];
+  const trailer =
+    youtubeVideos.find((video) => video.type === 'Trailer' && video.official) ||
+    youtubeVideos.find((video) => video.type === 'Trailer') ||
+    youtubeVideos.find((video) => video.type === 'Teaser') ||
+    youtubeVideos[0];
+
+  if (!trailer) {
+    return null;
+  }
+
+  return {
+    ...trailer,
+    embedUrl: `https://www.youtube.com/embed/${trailer.key}?controls=0&modestbranding=1&rel=0&playsinline=1`,
+    thumbnailUrl: `https://img.youtube.com/vi/${trailer.key}/hqdefault.jpg`
+  };
+}
+
 function normalizeMovie(movie) {
   return {
     ...movie,
@@ -118,6 +137,7 @@ function normalizeMovie(movie) {
     backdropUrl: backdropUrl(movie.backdrop_path),
     year: movie.release_date ? movie.release_date.slice(0, 4) : 'TBD',
     rating: movie.vote_average ? movie.vote_average.toFixed(1) : 'NR',
+    trailer: trailerFromVideos(movie.videos),
     credits: movie.credits
       ? {
           ...movie.credits,
