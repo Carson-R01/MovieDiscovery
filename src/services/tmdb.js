@@ -1,6 +1,7 @@
 const API_BASE = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/original';
+const PROFILE_BASE = 'https://image.tmdb.org/t/p/w185';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
 export const fallbackGenres = [
@@ -21,7 +22,15 @@ export const fallbackMovies = [
     backdrop_path: '/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg',
     release_date: '2010-07-16',
     vote_average: 8.4,
-    genre_ids: [28, 878, 53]
+    genre_ids: [28, 878, 53],
+    credits: {
+      cast: [
+        { id: 6193, name: 'Leonardo DiCaprio', character: 'Dom Cobb', profile_path: '/wo2hJpn04vbtmh0B9utCFdsQhxM.jpg' },
+        { id: 27578, name: 'Joseph Gordon-Levitt', character: 'Arthur', profile_path: '/4U9G4YwTlIEbAymBaseltS38eH4.jpg' },
+        { id: 24045, name: 'Elliot Page', character: 'Ariadne', profile_path: '/eCeFgzS8dYHnMfWQT0oQitCrsSz.jpg' },
+        { id: 2524, name: 'Tom Hardy', character: 'Eames', profile_path: '/d81K0RH8UX7tZj49tZaQhZ9ewH.jpg' }
+      ]
+    }
   },
   {
     id: 157336,
@@ -31,7 +40,15 @@ export const fallbackMovies = [
     backdrop_path: '/xJHokMbljvjADYdit5fK5VQsXEG.jpg',
     release_date: '2014-11-07',
     vote_average: 8.5,
-    genre_ids: [12, 18, 878]
+    genre_ids: [12, 18, 878],
+    credits: {
+      cast: [
+        { id: 10297, name: 'Matthew McConaughey', character: 'Cooper', profile_path: '/wJiGedOCZhwMx9DezY8uwbNxmAY.jpg' },
+        { id: 1813, name: 'Anne Hathaway', character: 'Brand', profile_path: '/tLelKoPNiyJCSEtQTz1FGv4TLGc.jpg' },
+        { id: 3895, name: 'Jessica Chastain', character: 'Murph', profile_path: '/lodMzLKSdrPcBry6TdoDsMN3Vge.jpg' },
+        { id: 1892, name: 'Michael Caine', character: 'Professor Brand', profile_path: '/hZruclwEPCKw3e83rnFSIH5sRFZ.jpg' }
+      ]
+    }
   },
   {
     id: 496243,
@@ -41,7 +58,15 @@ export const fallbackMovies = [
     backdrop_path: '/ApiBzeaa95TNYliSbQ8pJv4Fje7.jpg',
     release_date: '2019-05-30',
     vote_average: 8.5,
-    genre_ids: [18, 53]
+    genre_ids: [18, 53],
+    credits: {
+      cast: [
+        { id: 20738, name: 'Song Kang-ho', character: 'Kim Ki-taek', profile_path: '/1rNoqfQ30F84YfL1jnmZbe8jdzn.jpg' },
+        { id: 556435, name: 'Lee Sun-kyun', character: 'Park Dong-ik', profile_path: '/mOko1Bex8eGv2tMEnnE8CaM8G9a.jpg' },
+        { id: 1255886, name: 'Cho Yeo-jeong', character: 'Yeon-kyo', profile_path: '/mQGmlJUzKAYhVGmfnkscrZsGb3Z.jpg' },
+        { id: 1342698, name: 'Choi Woo-shik', character: 'Ki-woo', profile_path: '/x7vWu14a87qOZ8OSZqYn3gYMN3X.jpg' }
+      ]
+    }
   },
   {
     id: 129,
@@ -51,7 +76,15 @@ export const fallbackMovies = [
     backdrop_path: '/mSDsSDwaP3E7dEfUPWy4J0djt4O.jpg',
     release_date: '2001-07-20',
     vote_average: 8.5,
-    genre_ids: [12, 16]
+    genre_ids: [12, 16],
+    credits: {
+      cast: [
+        { id: 19587, name: 'Rumi Hiiragi', character: 'Chihiro Ogino', profile_path: null },
+        { id: 6837, name: 'Miyu Irino', character: 'Haku', profile_path: '/kBcrF346CAwSFypBS5x2HJGqJhZ.jpg' },
+        { id: 19588, name: 'Mari Natsuki', character: 'Yubaba', profile_path: '/z2QpDkx7Mra4b0SsA9nP8Lt2RGD.jpg' },
+        { id: 19589, name: 'Takashi Naito', character: 'Akio Ogino', profile_path: null }
+      ]
+    }
   }
 ];
 
@@ -63,13 +96,30 @@ function backdropUrl(path) {
   return path ? `${BACKDROP_BASE}${path}` : '';
 }
 
+function profileUrl(path) {
+  return path ? `${PROFILE_BASE}${path}` : '';
+}
+
+function normalizeCastMember(member) {
+  return {
+    ...member,
+    profileUrl: profileUrl(member.profile_path)
+  };
+}
+
 function normalizeMovie(movie) {
   return {
     ...movie,
     posterUrl: posterUrl(movie.poster_path),
     backdropUrl: backdropUrl(movie.backdrop_path),
     year: movie.release_date ? movie.release_date.slice(0, 4) : 'TBD',
-    rating: movie.vote_average ? movie.vote_average.toFixed(1) : 'NR'
+    rating: movie.vote_average ? movie.vote_average.toFixed(1) : 'NR',
+    credits: movie.credits
+      ? {
+          ...movie.credits,
+          cast: movie.credits.cast?.map(normalizeCastMember) || []
+        }
+      : undefined
   };
 }
 
@@ -140,5 +190,45 @@ export async function getMovieDetails(id) {
   } catch {
     const movie = fallbackMovies.find((item) => item.id === Number(id));
     return movie ? normalizeMovie(movie) : null;
+  }
+}
+
+export async function getWatchlistRecommendations(watchlist) {
+  const watchlistIds = new Set(watchlist.map((movie) => movie.id));
+
+  if (!watchlist.length) {
+    return [];
+  }
+
+  try {
+    const recommendationGroups = await Promise.all(
+      watchlist.slice(0, 5).map(async (movie) => {
+        const data = await request(`/movie/${movie.id}/recommendations`);
+        return data.results || [];
+      })
+    );
+
+    const seen = new Set(watchlistIds);
+
+    return recommendationGroups
+      .flat()
+      .filter((movie) => {
+        if (seen.has(movie.id)) {
+          return false;
+        }
+
+        seen.add(movie.id);
+        return true;
+      })
+      .sort((a, b) => b.vote_average - a.vote_average)
+      .slice(0, 12)
+      .map(normalizeMovie);
+  } catch {
+    const likedGenres = new Set(watchlist.flatMap((movie) => movie.genre_ids || []));
+
+    return fallbackMovies
+      .filter((movie) => !watchlistIds.has(movie.id))
+      .filter((movie) => movie.genre_ids.some((genreId) => likedGenres.has(genreId)))
+      .map(normalizeMovie);
   }
 }

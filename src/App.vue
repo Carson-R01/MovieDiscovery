@@ -68,6 +68,30 @@
             />
           </div>
         </div>
+
+        <div v-if="watchlist.length" class="recommendations-section">
+          <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+            <div>
+              <p class="section-kicker mb-1">For your watchlist</p>
+              <h2 class="h3 mb-0">Recommended Movies</h2>
+            </div>
+          </div>
+
+          <div v-if="recommendationsLoading" class="loading-state compact-state">Finding similar movies...</div>
+          <div v-else-if="recommendations.length === 0" class="empty-state compact-state">
+            Add a few more movies to improve recommendations.
+          </div>
+          <div v-else class="row g-4">
+            <div v-for="movie in recommendations" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
+              <MovieCard
+                :movie="movie"
+                :is-watchlisted="isWatchlisted(movie.id)"
+                @select="openDetails"
+                @toggle-watchlist="toggleWatchlist"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -106,6 +130,32 @@
             >
               {{ isWatchlisted(selectedMovie.id) ? 'Remove from Watchlist' : 'Add to Watchlist' }}
             </button>
+
+            <div v-if="featuredCast.length" class="cast-section mt-5">
+              <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                <div>
+                  <h3 class="mb-1">Cast</h3>
+                </div>
+              </div>
+
+              <div class="cast-grid">
+                <article v-for="person in featuredCast" :key="person.cast_id || person.credit_id || person.id" class="cast-card">
+                  <img
+                    v-if="person.profileUrl"
+                    class="cast-photo"
+                    :src="person.profileUrl"
+                    :alt="person.name"
+                  />
+                  <div v-else class="cast-photo cast-photo-placeholder">
+                    {{ initialsFor(person.name) }}
+                  </div>
+                  <div class="cast-copy">
+                    <h4>{{ person.name }}</h4>
+                    <p>{{ person.character || 'Cast member' }}</p>
+                  </div>
+                </article>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -116,7 +166,13 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue';
 import MovieCard from './components/MovieCard.vue';
-import { getGenres, getMovieDetails, getTrendingMovies, searchMovies } from './services/tmdb';
+import {
+  getGenres,
+  getMovieDetails,
+  getTrendingMovies,
+  getWatchlistRecommendations,
+  searchMovies
+} from './services/tmdb';
 
 const movies = ref([]);
 const genres = ref([]);
@@ -125,7 +181,10 @@ const searchTerm = ref('');
 const selectedGenre = ref('');
 const selectedMovie = ref(null);
 const loading = ref(true);
+const recommendations = ref([]);
+const recommendationsLoading = ref(false);
 const viewMode = ref('home');
+let recommendationsRequestId = 0;
 
 const heroMovie = computed(() => movies.value[0]);
 
@@ -162,6 +221,8 @@ const detailGenres = computed(() => {
   return genres.value.filter((genre) => selectedMovie.value.genre_ids?.includes(genre.id));
 });
 
+const featuredCast = computed(() => selectedMovie.value?.credits?.cast?.slice(0, 12) || []);
+
 function persistWatchlist() {
   localStorage.setItem('movie-watchlist', JSON.stringify(watchlist.value));
 }
@@ -178,6 +239,17 @@ function toggleWatchlist(movie) {
   }
 
   persistWatchlist();
+  loadRecommendations();
+}
+
+function initialsFor(name = '') {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
 }
 
 async function runSearch() {
@@ -186,6 +258,26 @@ async function runSearch() {
   selectedMovie.value = null;
   movies.value = await searchMovies(searchTerm.value);
   loading.value = false;
+}
+
+async function loadRecommendations() {
+  const requestId = ++recommendationsRequestId;
+
+  if (!watchlist.value.length) {
+    recommendations.value = [];
+    recommendationsLoading.value = false;
+    return;
+  }
+
+  recommendationsLoading.value = true;
+  const results = await getWatchlistRecommendations(watchlist.value);
+
+  if (requestId !== recommendationsRequestId) {
+    return;
+  }
+
+  recommendations.value = results;
+  recommendationsLoading.value = false;
 }
 
 async function openDetails(movie) {
@@ -228,6 +320,7 @@ onMounted(async () => {
   movies.value = movieResults;
   genres.value = genreResults;
   loading.value = false;
+  loadRecommendations();
   await syncDetailsFromHash();
   window.addEventListener('popstate', syncDetailsFromHash);
 });
