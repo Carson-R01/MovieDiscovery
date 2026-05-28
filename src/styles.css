@@ -313,9 +313,24 @@ select {
 }
 
 @media (max-width: 767px) {
+  .hero nav {
+    align-items: flex-start !important;
+    flex-wrap: wrap;
+  }
+
   .hero,
   .hero-overlay {
-    min-height: 68vh;
+    min-height: 36rem;
+  }
+
+  .hero-content {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  .hero-copy {
+    font-size: 1rem;
+    line-height: 1.55;
   }
 
   .toolbar,
@@ -323,24 +338,140 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .toolbar {
+    gap: 0.75rem;
+  }
+
   .genre-select {
     min-width: 0;
   }
 
   .hero h1 {
-    font-size: 3rem;
+    font-size: 2.7rem;
+    line-height: 1;
   }
 
   .nav-actions {
-    width: 100%;
-    justify-content: flex-start;
+    width: auto;
+    max-width: 100%;
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .account-pill {
     width: 100%;
+    min-width: 0;
+  }
+
+  .account-pill span {
+    max-width: none;
+  }
+
+  .movie-card .card-body {
+    padding: 0.85rem;
+  }
+
+  .movie-title {
+    min-height: 2.25rem;
+    font-size: 0.9rem;
+  }
+
+  .detail-page .container,
+  .profile-page .container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  .detail-poster,
+  .profile-photo-placeholder {
+    max-width: 15rem;
+    margin-inline: auto;
+  }
+
+  .detail-page .display-5,
+  .profile-page .display-5 {
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+
+  .profile-bio {
+    font-size: 1rem;
   }
 
   .cast-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .hero,
+  .hero-overlay {
+    min-height: 34rem;
+  }
+
+  .brand-button {
+    font-size: 1.85rem;
+    line-height: 1.1;
+    max-width: 9.5rem;
+    text-align: left;
+  }
+
+  .nav-actions {
+    flex: 0 1 auto;
+    justify-content: flex-end;
+  }
+
+  .nav-actions > .btn {
+    width: auto;
+    max-width: 9.5rem;
+    padding-inline: 0.8rem;
+    white-space: nowrap;
+  }
+
+  .account-pill {
+    max-width: 12rem;
+    padding-left: 0.55rem;
+  }
+
+  .account-pill span {
+    max-width: 5.5rem;
+  }
+
+  .hero h1 {
+    font-size: 2.35rem;
+  }
+
+  .hero-copy {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+  }
+
+  .content-band .row,
+  .profile-credits .row,
+  .recommendations-section .row {
+    --bs-gutter-x: 0.75rem;
+    --bs-gutter-y: 0.75rem;
+  }
+
+  .movie-card .btn-sm {
+    --bs-btn-font-size: 0.8rem;
+    --bs-btn-padding-x: 0.45rem;
+  }
+
+  .cast-copy {
+    padding: 0.7rem;
+  }
+
+  .cast-copy h4 {
+    font-size: 0.85rem;
+  }
+
+  .cast-copy p {
+    font-size: 0.78rem;
   }
 }
