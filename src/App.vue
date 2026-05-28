@@ -218,7 +218,10 @@
           </div>
           <div class="col-md-8 col-lg-9">
             <div class="detail-meta mb-3">
-              <span class="badge text-bg-warning">{{ selectedMovie.rating }}</span>
+              <span class="rating-score badge text-bg-warning">{{ selectedMovie.rating }}</span>
+              <button class="reviews-toggle-button" type="button" @click="toggleReviews">
+                {{ showReviews ? 'Hide Reviews' : 'See Reviews' }}
+              </button>
               <span>{{ selectedMovie.year }}</span>
               <span v-if="selectedMovie.runtime">{{ selectedMovie.runtime }} min</span>
             </div>
@@ -240,6 +243,53 @@
             >
               {{ isWatchlisted(selectedMovie.id) ? 'Remove from Watchlist' : 'Add to Watchlist' }}
             </button>
+
+            <div v-if="showReviews" class="reviews-section mt-4">
+              <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                <div>
+                  <p class="section-kicker mb-1">Audience</p>
+                  <h3 class="h4 mb-0">Reviews</h3>
+                </div>
+                <span class="text-secondary small">{{ movieReviews.length }} reviews</span>
+              </div>
+
+              <div v-if="movieReviews.length" class="review-list">
+                <article v-for="review in movieReviews" :key="review.id" class="review-card">
+                  <div class="review-header">
+                    <img
+                      v-if="review.avatarUrl"
+                      class="review-avatar"
+                      :src="review.avatarUrl"
+                      :alt="review.author"
+                    />
+                    <div v-else class="review-avatar review-avatar-placeholder">
+                      {{ initialsFor(review.author) }}
+                    </div>
+                    <div class="review-meta">
+                      <h4>{{ review.author }}</h4>
+                      <p>
+                        <span v-if="review.created_at">{{ formatDate(review.created_at) }}</span>
+                      </p>
+                    </div>
+                    <span v-if="review.rating" class="review-score">{{ review.rating }}/10</span>
+                  </div>
+                  <p class="review-content" :class="{ 'review-content-expanded': expandedReviewIds.includes(review.id) }">
+                    {{ review.content }}
+                  </p>
+                  <button
+                    v-if="review.content?.length > 420"
+                    class="btn btn-sm btn-outline-light"
+                    type="button"
+                    @click="toggleExpandedReview(review.id)"
+                  >
+                    {{ expandedReviewIds.includes(review.id) ? 'Show Less' : 'See Full Review' }}
+                  </button>
+                </article>
+              </div>
+              <div v-else class="empty-state compact-state">
+                No reviews found for this movie.
+              </div>
+            </div>
 
             <div class="watch-provider-section mt-5">
               <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
@@ -426,6 +476,8 @@ const authError = ref('');
 const personLoading = ref(false);
 const recommendations = ref([]);
 const recommendationsLoading = ref(false);
+const showReviews = ref(false);
+const expandedReviewIds = ref([]);
 const viewMode = ref('home');
 const runtimeByMovieId = ref({});
 let recommendationsRequestId = 0;
@@ -504,6 +556,8 @@ const detailGenres = computed(() => {
 });
 
 const featuredCast = computed(() => selectedMovie.value?.credits?.cast?.slice(0, 12) || []);
+
+const movieReviews = computed(() => selectedMovie.value?.reviews?.slice(0, 5) || []);
 
 const similarMovies = computed(() => {
   if (!selectedMovie.value) {
@@ -677,6 +731,26 @@ function initialsFor(name = '') {
     .toUpperCase();
 }
 
+function formatDate(date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(new Date(date));
+}
+
+function toggleReviews() {
+  showReviews.value = !showReviews.value;
+}
+
+function toggleExpandedReview(id) {
+  if (expandedReviewIds.value.includes(id)) {
+    expandedReviewIds.value = expandedReviewIds.value.filter((reviewId) => reviewId !== id);
+  } else {
+    expandedReviewIds.value = [...expandedReviewIds.value, id];
+  }
+}
+
 async function runSearch() {
   loading.value = true;
   viewMode.value = 'home';
@@ -733,6 +807,8 @@ async function loadRuntimesForCurrentMovies() {
 async function openDetails(movie) {
   const details = await getMovieDetails(movie.id);
   selectedMovie.value = details || movie;
+  showReviews.value = false;
+  expandedReviewIds.value = [];
   if (details?.runtime) {
     runtimeByMovieId.value = {
       ...runtimeByMovieId.value,
@@ -775,6 +851,8 @@ function closePersonProfile() {
 function closeDetails() {
   selectedMovie.value = null;
   selectedPerson.value = null;
+  showReviews.value = false;
+  expandedReviewIds.value = [];
   window.history.pushState({}, '', window.location.pathname);
 }
 
@@ -782,6 +860,8 @@ function showWatchlist() {
   viewMode.value = 'watchlist';
   selectedMovie.value = null;
   selectedPerson.value = null;
+  showReviews.value = false;
+  expandedReviewIds.value = [];
   window.history.pushState({}, '', window.location.pathname);
 }
 
@@ -789,6 +869,8 @@ function showHome() {
   viewMode.value = 'home';
   selectedMovie.value = null;
   selectedPerson.value = null;
+  showReviews.value = false;
+  expandedReviewIds.value = [];
   window.history.pushState({}, '', window.location.pathname);
 }
 
@@ -798,11 +880,15 @@ async function syncDetailsFromHash() {
   if (!match) {
     selectedMovie.value = null;
     selectedPerson.value = null;
+    showReviews.value = false;
+    expandedReviewIds.value = [];
     return;
   }
 
   const details = await getMovieDetails(match[1]);
   selectedMovie.value = details;
+  showReviews.value = false;
+  expandedReviewIds.value = [];
 }
 
 onMounted(async () => {

@@ -162,6 +162,16 @@ function watchProvidersFromResponse(response = {}) {
   };
 }
 
+function normalizeReview(review) {
+  const avatarPath = review.author_details?.avatar_path;
+
+  return {
+    ...review,
+    rating: review.author_details?.rating,
+    avatarUrl: avatarPath?.startsWith('/http') ? avatarPath.slice(1) : profileUrl(avatarPath)
+  };
+}
+
 function normalizeMovie(movie) {
   return {
     ...movie,
@@ -172,6 +182,7 @@ function normalizeMovie(movie) {
     trailer: trailerFromVideos(movie.videos),
     watchProviders: watchProvidersFromResponse(movie['watch/providers']),
     similarMovies: movie.similar?.results?.map(normalizeMovie) || [],
+    reviews: movie.reviews?.results?.map(normalizeReview) || [],
     credits: movie.credits
       ? {
           ...movie.credits,
@@ -285,7 +296,7 @@ export async function getGenres() {
 export async function getMovieDetails(id) {
   try {
     const data = await request(`/movie/${id}`, {
-      append_to_response: 'credits,videos,watch/providers,similar'
+      append_to_response: 'credits,videos,watch/providers,similar,reviews'
     });
     return normalizeMovie(data);
   } catch {

@@ -288,6 +288,118 @@ select {
   color: var(--text-soft);
 }
 
+.rating-score {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.reviews-toggle-button {
+  padding: 0.46rem 0.75rem;
+  border: 1px solid #3b4657;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.reviews-toggle-button:hover,
+.reviews-toggle-button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.review-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.reviews-section {
+  padding: 1.25rem;
+  border: 1px solid rgba(255, 193, 7, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.03)),
+    var(--panel-bg);
+}
+
+.review-card {
+  padding: 1.1rem;
+  border: 1px solid #26303f;
+  border-radius: 8px;
+  background: rgba(8, 11, 16, 0.62);
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.review-avatar {
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--panel-bg-strong);
+}
+
+.review-avatar-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.review-meta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.review-meta h4 {
+  margin: 0 0 0.15rem;
+  font-size: 1rem;
+}
+
+.review-meta p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.review-score {
+  flex: 0 0 auto;
+  padding: 0.42rem 0.6rem;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #241a00;
+  font-size: 0.95rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.review-content {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-bottom: 0.85rem;
+  color: #d8dee8;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+}
+
+.review-content-expanded {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
 .watch-provider-groups {
   display: grid;
   gap: 1.25rem;
