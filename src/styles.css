@@ -288,6 +288,53 @@ select {
   color: var(--text-soft);
 }
 
+.watch-provider-groups {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.watch-provider-group h4 {
+  margin: 0 0 0.65rem;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.provider-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.provider-pill {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 15rem;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.45rem 0.7rem 0.45rem 0.45rem;
+  border: 1px solid #26303f;
+  border-radius: 8px;
+  background: var(--panel-bg);
+}
+
+.provider-pill img {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.provider-pill span {
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cast-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -349,6 +396,40 @@ select {
   color: var(--text-soft);
   font-size: 0.85rem;
   line-height: 1.35;
+}
+
+.horizontal-movie-row {
+  display: grid;
+  grid-auto-columns: calc((100% - 3rem) / 4);
+  grid-auto-flow: column;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.8rem;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+}
+
+.horizontal-movie-item {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.horizontal-movie-row::-webkit-scrollbar {
+  height: 0.7rem;
+}
+
+.horizontal-movie-row::-webkit-scrollbar-track {
+  background: #111722;
+  border-radius: 999px;
+}
+
+.horizontal-movie-row::-webkit-scrollbar-thumb {
+  background: #3b4657;
+  border-radius: 999px;
+}
+
+.horizontal-movie-row::-webkit-scrollbar-thumb:hover {
+  background: #ffc107;
 }
 
 .profile-photo-placeholder {
@@ -467,6 +548,10 @@ select {
   .cast-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .horizontal-movie-row {
+    grid-auto-columns: minmax(9rem, 42%);
+  }
 }
 
 @media (max-width: 420px) {
@@ -536,5 +621,9 @@ select {
 
   .cast-copy p {
     font-size: 0.78rem;
+  }
+
+  .horizontal-movie-row {
+    grid-auto-columns: minmax(8.5rem, 64%);
   }
 }

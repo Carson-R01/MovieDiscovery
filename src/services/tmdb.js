@@ -2,6 +2,7 @@ const API_BASE = 'https://api.themoviedb.org/3';
 const IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/original';
 const PROFILE_BASE = 'https://image.tmdb.org/t/p/w185';
+const PROVIDER_BASE = 'https://image.tmdb.org/t/p/w92';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 
 export const fallbackGenres = [
@@ -130,6 +131,37 @@ function trailerFromVideos(videos = {}) {
   };
 }
 
+function providerLogoUrl(path) {
+  return path ? `${PROVIDER_BASE}${path}` : '';
+}
+
+function normalizeProvider(provider) {
+  return {
+    ...provider,
+    logoUrl: providerLogoUrl(provider.logo_path)
+  };
+}
+
+function watchProvidersFromResponse(response = {}) {
+  const regionProviders = response.results?.US;
+
+  if (!regionProviders) {
+    return {
+      link: '',
+      flatrate: [],
+      rent: [],
+      buy: []
+    };
+  }
+
+  return {
+    link: regionProviders.link || '',
+    flatrate: regionProviders.flatrate?.map(normalizeProvider) || [],
+    rent: regionProviders.rent?.map(normalizeProvider) || [],
+    buy: regionProviders.buy?.map(normalizeProvider) || []
+  };
+}
+
 function normalizeMovie(movie) {
   return {
     ...movie,
@@ -138,6 +170,8 @@ function normalizeMovie(movie) {
     year: movie.release_date ? movie.release_date.slice(0, 4) : 'TBD',
     rating: movie.vote_average ? movie.vote_average.toFixed(1) : 'NR',
     trailer: trailerFromVideos(movie.videos),
+    watchProviders: watchProvidersFromResponse(movie['watch/providers']),
+    similarMovies: movie.similar?.results?.map(normalizeMovie) || [],
     credits: movie.credits
       ? {
           ...movie.credits,
@@ -251,12 +285,29 @@ export async function getGenres() {
 export async function getMovieDetails(id) {
   try {
     const data = await request(`/movie/${id}`, {
-      append_to_response: 'credits,videos'
+      append_to_response: 'credits,videos,watch/providers,similar'
     });
     return normalizeMovie(data);
   } catch {
     const movie = fallbackMovies.find((item) => item.id === Number(id));
-    return movie ? normalizeMovie(movie) : null;
+    if (!movie) {
+      return null;
+    }
+
+    const similarMovies = fallbackMovies.filter((item) => {
+      if (item.id === movie.id) {
+        return false;
+      }
+
+      return item.genre_ids.some((genreId) => movie.genre_ids.includes(genreId));
+    });
+
+    return normalizeMovie({
+      ...movie,
+      similar: {
+        results: similarMovies
+      }
+    });
   }
 }
 

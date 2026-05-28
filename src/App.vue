@@ -241,6 +241,43 @@
               {{ isWatchlisted(selectedMovie.id) ? 'Remove from Watchlist' : 'Add to Watchlist' }}
             </button>
 
+            <div class="watch-provider-section mt-5">
+              <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                <div>
+                  <p class="section-kicker mb-1">Availability</p>
+                  <h3 class="h4 mb-0">Where to Watch</h3>
+                </div>
+                <a
+                  v-if="selectedMovie.watchProviders?.link"
+                  class="btn btn-sm btn-outline-light"
+                  :href="selectedMovie.watchProviders.link"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View on TMDB
+                </a>
+              </div>
+
+              <div v-if="watchProviderGroups.length" class="watch-provider-groups">
+                <div v-for="group in watchProviderGroups" :key="group.label" class="watch-provider-group">
+                  <h4>{{ group.label }}</h4>
+                  <div class="provider-list">
+                    <div v-for="provider in group.providers" :key="provider.provider_id" class="provider-pill">
+                      <img
+                        v-if="provider.logoUrl"
+                        :src="provider.logoUrl"
+                        :alt="provider.provider_name"
+                      />
+                      <span>{{ provider.provider_name }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-else class="empty-state compact-state">
+                No US watch providers found for this movie.
+              </div>
+            </div>
+
             <div v-if="featuredCast.length" class="cast-section mt-5">
               <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
                 <div>
@@ -270,6 +307,28 @@
                     <p>{{ person.character || 'Cast member' }}</p>
                   </div>
                 </button>
+              </div>
+            </div>
+
+            <div v-if="similarMovies.length" class="similar-movies-section mt-5">
+              <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                <div>
+                  <p class="section-kicker mb-1">More like this</p>
+                  <h3 class="h4 mb-0">Similar Movies</h3>
+                </div>
+              </div>
+
+              <div class="horizontal-movie-row">
+                <div v-for="movie in similarMovies" :key="movie.id" class="horizontal-movie-item">
+                  <MovieCard
+                    :movie="movie"
+                    :is-watchlisted="isWatchlisted(movie.id)"
+                    :can-use-watchlist="Boolean(currentUser)"
+                    :can-mark-watched="false"
+                    @select="openDetails"
+                    @toggle-watchlist="toggleWatchlist"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -445,6 +504,31 @@ const detailGenres = computed(() => {
 });
 
 const featuredCast = computed(() => selectedMovie.value?.credits?.cast?.slice(0, 12) || []);
+
+const similarMovies = computed(() => {
+  if (!selectedMovie.value) {
+    return [];
+  }
+
+  return (selectedMovie.value.similarMovies || [])
+    .filter((movie) => movie.id !== selectedMovie.value.id)
+    .filter((movie) => movie.posterUrl)
+    .slice(0, 12);
+});
+
+const watchProviderGroups = computed(() => {
+  const providers = selectedMovie.value?.watchProviders;
+
+  if (!providers) {
+    return [];
+  }
+
+  return [
+    { label: 'Stream', providers: providers.flatrate || [] },
+    { label: 'Rent', providers: providers.rent || [] },
+    { label: 'Buy', providers: providers.buy || [] }
+  ].filter((group) => group.providers.length);
+});
 
 const personMovieCredits = computed(() => {
   const seen = new Set();
