@@ -204,6 +204,16 @@ select {
   border-top: 1px solid #26303f;
 }
 
+.watchlist-sections {
+  display: grid;
+  gap: 3rem;
+}
+
+.watchlist-group + .watchlist-group {
+  padding-top: 3rem;
+  border-top: 1px solid #26303f;
+}
+
 .detail-page,
 .profile-page {
   position: fixed;

@@ -84,6 +84,64 @@
         </div>
 
         <div v-if="loading" class="loading-state">Loading movies...</div>
+        <div v-else-if="viewMode === 'watchlist' && watchlist.length === 0" class="empty-state">
+          Your watchlist is empty.
+        </div>
+        <div v-else-if="viewMode === 'watchlist'" class="watchlist-sections">
+          <section class="watchlist-group">
+            <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+              <div>
+                <p class="section-kicker mb-1">Queue</p>
+                <h3 class="h4 mb-0">To Watch</h3>
+              </div>
+              <span class="text-secondary small">{{ unwatchedMovies.length }} movies</span>
+            </div>
+
+            <div v-if="unwatchedMovies.length === 0" class="empty-state compact-state">
+              Everything in your watchlist has been watched.
+            </div>
+            <div v-else class="row g-4">
+              <div v-for="movie in sortedUnwatchedMovies" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
+                <MovieCard
+                  :movie="movie"
+                  :is-watchlisted="isWatchlisted(movie.id)"
+                  :can-use-watchlist="Boolean(currentUser)"
+                  :can-mark-watched="Boolean(currentUser)"
+                  @select="openDetails"
+                  @toggle-watchlist="toggleWatchlist"
+                  @toggle-watched="toggleWatched"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="watchlist-group">
+            <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+              <div>
+                <p class="section-kicker mb-1">Finished</p>
+                <h3 class="h4 mb-0">Watched</h3>
+              </div>
+              <span class="text-secondary small">{{ watchedMovies.length }} movies</span>
+            </div>
+
+            <div v-if="watchedMovies.length === 0" class="empty-state compact-state">
+              Mark movies as watched when you finish them.
+            </div>
+            <div v-else class="row g-4">
+              <div v-for="movie in sortedWatchedMovies" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
+                <MovieCard
+                  :movie="movie"
+                  :is-watchlisted="isWatchlisted(movie.id)"
+                  :can-use-watchlist="Boolean(currentUser)"
+                  :can-mark-watched="Boolean(currentUser)"
+                  @select="openDetails"
+                  @toggle-watchlist="toggleWatchlist"
+                  @toggle-watched="toggleWatched"
+                />
+              </div>
+            </div>
+          </section>
+        </div>
         <div v-else-if="sortedMovies.length === 0" class="empty-state">
           No movies found. Try another search or genre.
         </div>
@@ -92,6 +150,8 @@
             <MovieCard
               :movie="movie"
               :is-watchlisted="isWatchlisted(movie.id)"
+              :can-use-watchlist="Boolean(currentUser)"
+              :can-mark-watched="false"
               @select="openDetails"
               @toggle-watchlist="toggleWatchlist"
             />
@@ -115,6 +175,8 @@
               <MovieCard
                 :movie="movie"
                 :is-watchlisted="isWatchlisted(movie.id)"
+                :can-use-watchlist="Boolean(currentUser)"
+                :can-mark-watched="false"
                 @select="openDetails"
                 @toggle-watchlist="toggleWatchlist"
               />
@@ -170,6 +232,7 @@
             </div>
 
             <button
+              v-if="currentUser"
               class="btn btn-lg"
               :class="isWatchlisted(selectedMovie.id) ? 'btn-success' : 'btn-warning'"
               type="button"
@@ -255,6 +318,7 @@
                   <MovieCard
                     :movie="movie"
                     :is-watchlisted="isWatchlisted(movie.id)"
+                    :can-use-watchlist="Boolean(currentUser)"
                     @select="openDetailsFromPerson"
                     @toggle-watchlist="toggleWatchlist"
                   />
@@ -285,7 +349,8 @@ import {
   saveUserWatchlistMovie,
   signInWithGoogle,
   signOutUser,
-  subscribeToUser
+  subscribeToUser,
+  updateUserWatchlistMovie
 } from './services/watchlist';
 
 const movies = ref([]);
@@ -312,6 +377,10 @@ const heroMovie = computed(() => movies.value[0]);
 
 const visibleMovies = computed(() => (viewMode.value === 'watchlist' ? watchlist.value : movies.value));
 
+const unwatchedMovies = computed(() => watchlist.value.filter((movie) => !movie.watched));
+
+const watchedMovies = computed(() => watchlist.value.filter((movie) => movie.watched));
+
 const filteredMovies = computed(() => {
   if (!selectedGenre.value) {
     return visibleMovies.value;
@@ -324,7 +393,15 @@ const filteredMovies = computed(() => {
 });
 
 const sortedMovies = computed(() => {
-  const moviesToSort = [...filteredMovies.value];
+  return sortMovies(filteredMovies.value);
+});
+
+const sortedUnwatchedMovies = computed(() => sortMovies(unwatchedMovies.value));
+
+const sortedWatchedMovies = computed(() => sortMovies(watchedMovies.value));
+
+function sortMovies(movieList) {
+  const moviesToSort = [...movieList];
 
   return moviesToSort.sort((a, b) => {
     switch (sortOption.value) {
@@ -345,7 +422,7 @@ const sortedMovies = computed(() => {
         return yearFor(b) - yearFor(a);
     }
   });
-});
+}
 
 const pageTitle = computed(() => {
   if (viewMode.value === 'watchlist') {
@@ -444,6 +521,22 @@ async function toggleWatchlist(movie) {
   loadRecommendations();
 }
 
+async function toggleWatched(movie) {
+  authError.value = '';
+  const watched = !movie.watched;
+  watchlist.value = watchlist.value.map((item) =>
+    item.id === movie.id ? { ...item, watched } : item
+  );
+
+  try {
+    await updateUserWatchlistMovie(currentUser.value?.uid, movie.id, { watched });
+  } catch (error) {
+    authError.value = error.message || 'Unable to update watched status.';
+  }
+
+  loadRecommendations();
+}
+
 async function login() {
   authError.value = '';
 
@@ -480,7 +573,10 @@ async function handleAuthChange(user) {
 
   try {
     const cloudWatchlist = await loadUserWatchlist(user.uid);
-    watchlist.value = cloudWatchlist;
+    watchlist.value = cloudWatchlist.map((movie) => ({
+      ...movie,
+      watched: Boolean(movie.watched)
+    }));
     loadRecommendations();
   } catch (error) {
     authError.value = error.message || 'Unable to load your account watchlist.';

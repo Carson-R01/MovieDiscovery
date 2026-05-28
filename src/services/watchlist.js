@@ -5,7 +5,8 @@ import {
   doc,
   getDocs,
   serverTimestamp,
-  setDoc
+  setDoc,
+  updateDoc
 } from 'firebase/firestore';
 import { auth, db, firebaseEnabled, googleProvider } from './firebase';
 
@@ -61,6 +62,7 @@ export async function saveUserWatchlistMovie(userId, movie) {
     genre_ids: movie.genre_ids || movie.genres?.map((genre) => genre.id) || [],
     year: movie.year || '',
     rating: movie.rating || 'NR',
+    watched: Boolean(movie.watched),
     addedAt: serverTimestamp()
   });
 }
@@ -71,4 +73,12 @@ export async function removeUserWatchlistMovie(userId, movieId) {
   }
 
   await deleteDoc(doc(db, 'users', userId, 'watchlist', String(movieId)));
+}
+
+export async function updateUserWatchlistMovie(userId, movieId, updates) {
+  if (!firebaseEnabled || !userId) {
+    return;
+  }
+
+  await updateDoc(doc(db, 'users', userId, 'watchlist', String(movieId)), updates);
 }

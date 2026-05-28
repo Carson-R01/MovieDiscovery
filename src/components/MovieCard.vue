@@ -23,12 +23,22 @@
           Details
         </button>
         <button
+          v-if="canUseWatchlist"
           class="btn btn-sm"
           :class="isWatchlisted ? 'btn-success' : 'btn-outline-warning'"
           type="button"
           @click="$emit('toggle-watchlist', movie)"
         >
           {{ isWatchlisted ? 'In Watchlist' : 'Add Watchlist' }}
+        </button>
+        <button
+          v-if="canMarkWatched"
+          class="btn btn-sm"
+          :class="movie.watched ? 'btn-outline-info' : 'btn-info'"
+          type="button"
+          @click="$emit('toggle-watched', movie)"
+        >
+          {{ movie.watched ? 'Mark Unwatched' : 'Mark Watched' }}
         </button>
       </div>
     </div>
@@ -44,8 +54,16 @@ defineProps({
   isWatchlisted: {
     type: Boolean,
     default: false
+  },
+  canUseWatchlist: {
+    type: Boolean,
+    default: false
+  },
+  canMarkWatched: {
+    type: Boolean,
+    default: false
   }
 });
 
-defineEmits(['select', 'toggle-watchlist']);
+defineEmits(['select', 'toggle-watchlist', 'toggle-watched']);
 </script>
