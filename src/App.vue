@@ -8,10 +8,6 @@
         <nav class="container py-4 d-flex align-items-center justify-content-between gap-3">
           <button class="brand-button" type="button" @click="showHome">Movie Discovery</button>
           <div class="nav-actions">
-            <button class="btn btn-warning" type="button" @click="showWatchlist">
-              Watchlist
-              <span class="badge text-bg-dark ms-1">{{ watchlist.length }}</span>
-            </button>
             <button v-if="!currentUser" class="btn btn-outline-light" type="button" @click="login">
               Sign in
             </button>
@@ -25,6 +21,10 @@
               <span>{{ currentUser.displayName || currentUser.email }}</span>
               <button class="btn btn-sm btn-outline-light" type="button" @click="logout">Sign out</button>
             </div>
+            <button v-if="currentUser" class="btn btn-warning" type="button" @click="showWatchlist">
+              Watchlist
+              <span class="badge text-bg-dark ms-1">{{ watchlist.length }}</span>
+            </button>
           </div>
         </nav>
 
@@ -395,6 +395,10 @@ async function handleAuthChange(user) {
   authError.value = '';
 
   if (!user) {
+    if (viewMode.value === 'watchlist') {
+      viewMode.value = 'home';
+    }
+
     watchlist.value = JSON.parse(localStorage.getItem('movie-watchlist') || '[]');
     loadRecommendations();
     return;
