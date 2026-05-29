@@ -108,7 +108,15 @@
 
         <div v-if="loading" class="loading-state">Loading movies...</div>
         <div v-else-if="viewMode === 'watchlist' && watchlist.length === 0" class="empty-state">
-          Your watchlist is empty.
+          <div class="empty-state-content">
+            <div class="empty-state-icon">LIST</div>
+            <h3>Your watchlist is empty</h3>
+            <p>Save movies you want to watch later, then mark them watched when you finish.</p>
+            <div class="empty-state-actions">
+              <button class="btn btn-warning" type="button" @click="showHome">Browse Trending</button>
+              <button class="btn btn-outline-light" type="button" @click="browseAllMovies">Browse All Movies</button>
+            </div>
+          </div>
         </div>
         <div v-else-if="viewMode === 'watchlist'" class="watchlist-sections">
           <section class="watchlist-group">
@@ -121,7 +129,12 @@
             </div>
 
             <div v-if="unwatchedMovies.length === 0" class="empty-state compact-state">
-              Everything in your watchlist has been watched.
+              <div class="empty-state-content">
+                <div class="empty-state-icon">DONE</div>
+                <h3>Nothing waiting right now</h3>
+                <p>Everything in your watchlist has been marked watched.</p>
+                <button class="btn btn-sm btn-outline-light" type="button" @click="browseAllMovies">Find More Movies</button>
+              </div>
             </div>
             <div v-else class="row g-4">
               <div v-for="movie in sortedUnwatchedMovies" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
@@ -148,7 +161,11 @@
             </div>
 
             <div v-if="watchedMovies.length === 0" class="empty-state compact-state">
-              Mark movies as watched when you finish them.
+              <div class="empty-state-content">
+                <div class="empty-state-icon">RATE</div>
+                <h3>No watched movies yet</h3>
+                <p>Mark movies as watched to unlock personal ratings and private reviews.</p>
+              </div>
             </div>
             <div v-else class="row g-4">
               <div v-for="movie in sortedWatchedMovies" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
@@ -166,7 +183,15 @@
           </section>
         </div>
         <div v-else-if="sortedMovies.length === 0" class="empty-state">
-          No movies found. Try another search or genre.
+          <div class="empty-state-content">
+            <div class="empty-state-icon">FIND</div>
+            <h3>{{ searchTerm ? `No movies found for "${searchTerm}"` : 'No movies found' }}</h3>
+            <p>Try a different title, clear your filters, or jump back into trending movies.</p>
+            <div class="empty-state-actions">
+              <button class="btn btn-warning" type="button" @click="clearSearchAndShowTrending">Clear Search</button>
+              <button class="btn btn-outline-light" type="button" @click="browseAllMovies">Browse All Movies</button>
+            </div>
+          </div>
         </div>
         <div v-else class="row g-4">
           <div v-for="movie in sortedMovies" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
@@ -211,7 +236,12 @@
 
           <div v-if="recommendationsLoading" class="loading-state compact-state">Finding similar movies...</div>
           <div v-else-if="recommendations.length === 0" class="empty-state compact-state">
-            Add a few more movies to improve recommendations.
+            <div class="empty-state-content">
+              <div class="empty-state-icon">MORE</div>
+              <h3>No recommendations yet</h3>
+              <p>Add a few more movies to your watchlist so similar picks have better signals.</p>
+              <button class="btn btn-sm btn-outline-light" type="button" @click="browseAllMovies">Browse All Movies</button>
+            </div>
           </div>
           <div v-else class="row g-4">
             <div v-for="movie in recommendations" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
@@ -253,10 +283,14 @@
             <div
               v-else
               class="detail-trailer-fallback"
-              :style="{ backgroundImage: selectedMovie.backdropUrl ? `url(${selectedMovie.backdropUrl})` : '' }"
-            >
-              <span>No trailer available</span>
+            :style="{ backgroundImage: selectedMovie.backdropUrl ? `url(${selectedMovie.backdropUrl})` : '' }"
+          >
+            <div class="trailer-empty-content">
+              <div class="empty-state-icon">PLAY</div>
+              <h3>No trailer available</h3>
+              <p>TMDB does not have a trailer for this movie yet.</p>
             </div>
+          </div>
           </div>
 
           <div class="row g-4 align-items-start">
@@ -390,7 +424,11 @@
                   </article>
                 </div>
                 <div v-else class="empty-state compact-state">
-                  No reviews found for this movie.
+                  <div class="empty-state-content">
+                    <div class="empty-state-icon">REV</div>
+                    <h3>No reviews yet</h3>
+                    <p>There are no TMDB reviews for this movie right now.</p>
+                  </div>
                 </div>
               </div>
 
@@ -427,7 +465,11 @@
                   </div>
                 </div>
                 <div v-else class="empty-state compact-state">
-                  No US watch providers found for this movie.
+                  <div class="empty-state-content">
+                    <div class="empty-state-icon">US</div>
+                    <h3>No streaming options found</h3>
+                    <p>TMDB does not list US streaming, rental, or purchase options for this movie yet.</p>
+                  </div>
                 </div>
               </div>
 
@@ -524,7 +566,11 @@
               <h3 class="h4 mb-3">Movies</h3>
 
               <div v-if="personMovieCredits.length === 0" class="empty-state compact-state">
-                No movie credits found.
+                <div class="empty-state-content">
+                  <div class="empty-state-icon">CAST</div>
+                  <h3>No movie credits found</h3>
+                  <p>TMDB does not list movie credits for this person yet.</p>
+                </div>
               </div>
               <div v-else class="row g-4">
                 <div v-for="movie in personMovieCredits" :key="movie.credit_id || movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
@@ -1094,6 +1140,18 @@ async function runSearch() {
   selectedMovie.value = null;
   suggestionsOpen.value = false;
   movies.value = await searchMovies(searchTerm.value);
+  loading.value = false;
+}
+
+async function clearSearchAndShowTrending() {
+  loading.value = true;
+  searchTerm.value = '';
+  selectedGenre.value = '';
+  viewMode.value = 'home';
+  selectedMovie.value = null;
+  suggestionsOpen.value = false;
+  searchSuggestions.value = [];
+  movies.value = await getTrendingMovies();
   loading.value = false;
 }
 
