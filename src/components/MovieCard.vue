@@ -16,7 +16,10 @@
         <span class="rating badge text-bg-warning">{{ movie.rating }}</span>
       </div>
 
-      <p class="text-secondary small mb-3">{{ movie.year }}</p>
+      <div class="movie-card-meta">
+        <span>{{ movie.year }}</span>
+        <span v-if="movie.contentRating" class="card-content-rating">{{ movie.contentRating }}</span>
+      </div>
       <p v-if="movie.watched && movie.watchedAt" class="watched-date small">
         Watched {{ movie.watchedAt }}
       </p>
@@ -24,7 +27,7 @@
         Your rating: {{ movie.personalRating }}/10
       </p>
 
-      <div class="mt-auto d-grid gap-2">
+      <div class="movie-card-actions d-grid gap-2">
         <button class="btn btn-sm btn-outline-light" type="button" @click="$emit('select', movie)">
           Details
         </button>

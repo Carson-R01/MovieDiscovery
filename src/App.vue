@@ -650,6 +650,7 @@ const expandedReviewIds = ref([]);
 const viewMode = ref('home');
 const discoverPage = ref(1);
 const runtimeByMovieId = ref({});
+const contentRatingByMovieId = ref({});
 const personalRating = ref('');
 const privateReview = ref('');
 const privateReviewSaving = ref(false);
@@ -658,6 +659,7 @@ const showPrivateReviewForm = ref(false);
 let recommendationsRequestId = 0;
 let personRequestId = 0;
 let suggestionsRequestId = 0;
+let contentRatingsRequestId = 0;
 let suggestionsTimer = null;
 let unsubscribeFromUser = null;
 
@@ -681,12 +683,12 @@ const filteredMovies = computed(() => {
 });
 
 const sortedMovies = computed(() => {
-  return sortMovies(filteredMovies.value);
+  return sortMovies(filteredMovies.value).map(withCardMetadata);
 });
 
-const sortedUnwatchedMovies = computed(() => sortMovies(unwatchedMovies.value));
+const sortedUnwatchedMovies = computed(() => sortMovies(unwatchedMovies.value).map(withCardMetadata));
 
-const sortedWatchedMovies = computed(() => sortMovies(watchedMovies.value));
+const sortedWatchedMovies = computed(() => sortMovies(watchedMovies.value).map(withCardMetadata));
 
 const selectedWatchlistMovie = computed(() => {
   if (!selectedMovie.value) {
@@ -837,6 +839,13 @@ function runtimeFor(movie) {
 
 function runtimeForSort(movie, fallback) {
   return runtimeFor(movie) || fallback;
+}
+
+function withCardMetadata(movie) {
+  return {
+    ...movie,
+    contentRating: movie.contentRating || contentRatingByMovieId.value[movie.id] || ''
+  };
 }
 
 function formatRuntime(minutes) {
@@ -1171,6 +1180,39 @@ async function loadRuntimesForCurrentMovies() {
   runtimeByMovieId.value = nextRuntimeByMovieId;
 }
 
+async function loadContentRatingsForCurrentMovies() {
+  const requestId = ++contentRatingsRequestId;
+  const moviesMissingContentRating = filteredMovies.value
+    .filter((movie) => !movie.contentRating && !contentRatingByMovieId.value[movie.id])
+    .slice(0, 24);
+
+  if (!moviesMissingContentRating.length) {
+    return;
+  }
+
+  const details = await Promise.all(moviesMissingContentRating.map((movie) => getMovieDetails(movie.id)));
+
+  if (requestId !== contentRatingsRequestId) {
+    return;
+  }
+
+  const nextContentRatingByMovieId = { ...contentRatingByMovieId.value };
+  const nextRuntimeByMovieId = { ...runtimeByMovieId.value };
+
+  details.forEach((movie) => {
+    if (movie?.contentRating) {
+      nextContentRatingByMovieId[movie.id] = movie.contentRating;
+    }
+
+    if (movie?.runtime) {
+      nextRuntimeByMovieId[movie.id] = movie.runtime;
+    }
+  });
+
+  contentRatingByMovieId.value = nextContentRatingByMovieId;
+  runtimeByMovieId.value = nextRuntimeByMovieId;
+}
+
 async function openDetails(movie) {
   const details = await getMovieDetails(movie.id);
   selectedMovie.value = details || movie;
@@ -1181,6 +1223,12 @@ async function openDetails(movie) {
     runtimeByMovieId.value = {
       ...runtimeByMovieId.value,
       [details.id]: details.runtime
+    };
+  }
+  if (details?.contentRating) {
+    contentRatingByMovieId.value = {
+      ...contentRatingByMovieId.value,
+      [details.id]: details.contentRating
     };
   }
   selectedPerson.value = null;
@@ -1271,12 +1319,14 @@ onMounted(async () => {
   genres.value = genreResults;
   loading.value = false;
   loadRecommendations();
+  loadContentRatingsForCurrentMovies();
   await syncDetailsFromHash();
   window.addEventListener('popstate', syncDetailsFromHash);
 });
 
 watch([sortOption, filteredMovies], () => {
   loadRuntimesForCurrentMovies();
+  loadContentRatingsForCurrentMovies();
 });
 
 watch(searchTerm, (query) => {

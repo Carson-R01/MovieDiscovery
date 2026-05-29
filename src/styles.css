@@ -315,8 +315,33 @@ select {
 }
 
 .movie-title {
-  min-height: 2.5rem;
   line-height: 1.25;
+}
+
+.movie-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+  color: var(--text-soft);
+  font-size: 0.875rem;
+}
+
+.card-content-rating {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.24rem 0.42rem;
+  border: 1px solid #465164;
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.movie-card-actions {
+  margin-top: 0;
 }
 
 .watched-date {
@@ -927,7 +952,6 @@ select {
   }
 
   .movie-title {
-    min-height: 2.25rem;
     font-size: 0.9rem;
   }
 
