@@ -692,6 +692,12 @@ select {
   color: var(--text-soft);
 }
 
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .rating-score {
   display: inline-flex;
   align-items: center;
@@ -922,7 +928,8 @@ select {
   gap: 1.25rem;
 }
 
-.watch-provider-group h4 {
+.watch-provider-group h4,
+.official-provider-link h4 {
   margin: 0 0 0.65rem;
   color: var(--text-soft);
   font-size: 0.9rem;
@@ -946,6 +953,31 @@ select {
   border: 1px solid #26303f;
   border-radius: 8px;
   background: var(--panel-bg);
+}
+
+.provider-pill-link {
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.provider-pill-link:hover,
+.provider-pill-link:focus-visible {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.provider-fallback-logo {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(255, 193, 7, 0.16);
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 900;
 }
 
 .provider-pill img {

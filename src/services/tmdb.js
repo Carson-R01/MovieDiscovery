@@ -190,6 +190,7 @@ function normalizeMovie(movie) {
     ...movie,
     posterUrl: posterUrl(movie.poster_path),
     backdropUrl: backdropUrl(movie.backdrop_path),
+    homepage: movie.homepage || '',
     year: movie.release_date ? movie.release_date.slice(0, 4) : 'TBD',
     rating: movie.vote_average ? movie.vote_average.toFixed(1) : 'NR',
     contentRating: movie.contentRating || contentRatingFromReleaseDates(movie.release_dates),

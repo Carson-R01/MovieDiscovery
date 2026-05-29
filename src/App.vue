@@ -411,15 +411,17 @@
                 </span>
               </div>
 
-              <button
-                v-if="currentUser"
-                class="btn btn-lg"
-                :class="isWatchlisted(selectedMovie.id) ? 'btn-success' : 'btn-warning'"
-                type="button"
-                @click="toggleWatchlist(selectedMovie)"
-              >
-                {{ isWatchlisted(selectedMovie.id) ? 'Remove from Watchlist' : 'Add to Watchlist' }}
-              </button>
+              <div class="detail-actions">
+                <button
+                  v-if="currentUser"
+                  class="btn btn-lg"
+                  :class="isWatchlisted(selectedMovie.id) ? 'btn-success' : 'btn-warning'"
+                  type="button"
+                  @click="toggleWatchlist(selectedMovie)"
+                >
+                  {{ isWatchlisted(selectedMovie.id) ? 'Remove from Watchlist' : 'Add to Watchlist' }}
+                </button>
+              </div>
 
               <div v-if="currentUser && selectedWatchlistMovie" class="custom-list-panel mt-4">
                 <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
@@ -563,10 +565,23 @@
                   >
                     View on TMDB
                   </a>
-                </div>
+              </div>
 
-                <div v-if="watchProviderGroups.length" class="watch-provider-groups">
-                  <div v-for="group in watchProviderGroups" :key="group.label" class="watch-provider-group">
+              <div v-if="selectedMovie.homepage" class="official-provider-link mb-4">
+                <h4>Official</h4>
+                <a
+                  class="provider-pill provider-pill-link"
+                  :href="selectedMovie.homepage"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span class="provider-fallback-logo">WEB</span>
+                  <span>Official Website</span>
+                </a>
+              </div>
+
+              <div v-if="watchProviderGroups.length" class="watch-provider-groups">
+                <div v-for="group in watchProviderGroups" :key="group.label" class="watch-provider-group">
                     <h4>{{ group.label }}</h4>
                     <div class="provider-list">
                       <div v-for="provider in group.providers" :key="provider.provider_id" class="provider-pill">

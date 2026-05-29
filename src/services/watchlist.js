@@ -107,6 +107,7 @@ export async function saveUserWatchlistMovie(userId, movie) {
     backdrop_path: movie.backdrop_path || '',
     posterUrl: movie.posterUrl || '',
     backdropUrl: movie.backdropUrl || '',
+    homepage: movie.homepage || '',
     release_date: movie.release_date || '',
     vote_average: movie.vote_average || 0,
     genre_ids: movie.genre_ids || movie.genres?.map((genre) => genre.id) || [],
