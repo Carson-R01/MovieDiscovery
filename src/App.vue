@@ -237,205 +237,207 @@
       </div>
     </section>
 
-    <section v-if="selectedMovie" class="detail-page">
-      <div class="container py-5">
-        <button class="btn btn-outline-light mb-4" type="button" @click="closeDetails">Back</button>
+    <Transition name="detail-page-transition" mode="out-in">
+      <section v-if="selectedMovie" :key="selectedMovie.id" class="detail-page">
+        <div class="container py-5">
+          <button class="btn btn-outline-light mb-4" type="button" @click="closeDetails">Back</button>
 
-        <div class="detail-trailer-hero mb-4">
-          <iframe
-            v-if="selectedMovie.trailer"
-            :src="selectedMovie.trailer.embedUrl"
-            :title="`${selectedMovie.title} trailer`"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowfullscreen
-          ></iframe>
-          <div
-            v-else
-            class="detail-trailer-fallback"
-            :style="{ backgroundImage: selectedMovie.backdropUrl ? `url(${selectedMovie.backdropUrl})` : '' }"
-          >
-            <span>No trailer available</span>
-          </div>
-        </div>
-
-        <div class="row g-4 align-items-start">
-          <div class="col-md-4 col-lg-3 detail-poster-column">
-            <img
-              v-if="selectedMovie.posterUrl"
-              class="detail-poster"
-              :src="selectedMovie.posterUrl"
-              :alt="selectedMovie.title"
-            />
-          </div>
-          <div class="col-md-8 col-lg-9">
-            <div class="detail-meta mb-3">
-              <span class="rating-score badge text-bg-warning">{{ selectedMovie.rating }}</span>
-              <button class="reviews-toggle-button" type="button" @click="toggleReviews">
-                {{ showReviews ? 'Hide Reviews' : 'See Reviews' }}
-              </button>
-              <span>{{ selectedMovie.year }}</span>
-              <span v-if="selectedMovie.runtime">{{ formatRuntime(selectedMovie.runtime) }}</span>
-            </div>
-            <h2 class="display-5 fw-bold">{{ selectedMovie.title }}</h2>
-            <p class="lead text-secondary">{{ selectedMovie.overview }}</p>
-
-            <div class="d-flex flex-wrap gap-2 mb-4">
-              <span v-for="genre in detailGenres" :key="genre.id" class="badge rounded-pill text-bg-secondary">
-                {{ genre.name }}
-              </span>
-            </div>
-
-            <button
-              v-if="currentUser"
-              class="btn btn-lg"
-              :class="isWatchlisted(selectedMovie.id) ? 'btn-success' : 'btn-warning'"
-              type="button"
-              @click="toggleWatchlist(selectedMovie)"
+          <div class="detail-trailer-hero mb-4">
+            <iframe
+              v-if="selectedMovie.trailer"
+              :src="selectedMovie.trailer.embedUrl"
+              :title="`${selectedMovie.title} trailer`"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+            ></iframe>
+            <div
+              v-else
+              class="detail-trailer-fallback"
+              :style="{ backgroundImage: selectedMovie.backdropUrl ? `url(${selectedMovie.backdropUrl})` : '' }"
             >
-              {{ isWatchlisted(selectedMovie.id) ? 'Remove from Watchlist' : 'Add to Watchlist' }}
-            </button>
-
-            <div v-if="showReviews" class="reviews-section mt-4">
-              <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
-                <div>
-                  <p class="section-kicker mb-1">Audience</p>
-                  <h3 class="h4 mb-0">Reviews</h3>
-                </div>
-                <span class="text-secondary small">{{ movieReviews.length }} reviews</span>
-              </div>
-
-              <div v-if="movieReviews.length" class="review-list">
-                <article v-for="review in movieReviews" :key="review.id" class="review-card">
-                  <div class="review-header">
-                    <img
-                      v-if="review.avatarUrl"
-                      class="review-avatar"
-                      :src="review.avatarUrl"
-                      :alt="review.author"
-                    />
-                    <div v-else class="review-avatar review-avatar-placeholder">
-                      {{ initialsFor(review.author) }}
-                    </div>
-                    <div class="review-meta">
-                      <h4>{{ review.author }}</h4>
-                      <p>
-                        <span v-if="review.created_at">{{ formatDate(review.created_at) }}</span>
-                      </p>
-                    </div>
-                    <span v-if="review.rating" class="review-score">{{ review.rating }}/10</span>
-                  </div>
-                  <p class="review-content" :class="{ 'review-content-expanded': expandedReviewIds.includes(review.id) }">
-                    {{ review.content }}
-                  </p>
-                  <button
-                    v-if="review.content?.length > 420"
-                    class="btn btn-sm btn-outline-light"
-                    type="button"
-                    @click="toggleExpandedReview(review.id)"
-                  >
-                    {{ expandedReviewIds.includes(review.id) ? 'Show Less' : 'See Full Review' }}
-                  </button>
-                </article>
-              </div>
-              <div v-else class="empty-state compact-state">
-                No reviews found for this movie.
-              </div>
+              <span>No trailer available</span>
             </div>
+          </div>
 
-            <div class="watch-provider-section mt-5">
-              <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
-                <div>
-                  <p class="section-kicker mb-1">Availability</p>
-                  <h3 class="h4 mb-0">Where to Watch</h3>
-                </div>
-                <a
-                  v-if="selectedMovie.watchProviders?.link"
-                  class="btn btn-sm btn-outline-light"
-                  :href="selectedMovie.watchProviders.link"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  View on TMDB
-                </a>
-              </div>
-
-              <div v-if="watchProviderGroups.length" class="watch-provider-groups">
-                <div v-for="group in watchProviderGroups" :key="group.label" class="watch-provider-group">
-                  <h4>{{ group.label }}</h4>
-                  <div class="provider-list">
-                    <div v-for="provider in group.providers" :key="provider.provider_id" class="provider-pill">
-                      <img
-                        v-if="provider.logoUrl"
-                        :src="provider.logoUrl"
-                        :alt="provider.provider_name"
-                      />
-                      <span>{{ provider.provider_name }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="empty-state compact-state">
-                No US watch providers found for this movie.
-              </div>
+          <div class="row g-4 align-items-start">
+            <div class="col-md-4 col-lg-3 detail-poster-column">
+              <img
+                v-if="selectedMovie.posterUrl"
+                class="detail-poster"
+                :src="selectedMovie.posterUrl"
+                :alt="selectedMovie.title"
+              />
             </div>
-
-            <div v-if="featuredCast.length" class="cast-section mt-5">
-              <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
-                <div>
-                  <h3 class="mb-1">Cast</h3>
-                </div>
-              </div>
-
-              <div class="cast-grid">
-                <button
-                  v-for="person in featuredCast"
-                  :key="person.cast_id || person.credit_id || person.id"
-                  class="cast-card"
-                  type="button"
-                  @click="openPersonProfile(person)"
-                >
-                  <img
-                    v-if="person.profileUrl"
-                    class="cast-photo"
-                    :src="person.profileUrl"
-                    :alt="person.name"
-                  />
-                  <div v-else class="cast-photo cast-photo-placeholder">
-                    {{ initialsFor(person.name) }}
-                  </div>
-                  <div class="cast-copy">
-                    <h4>{{ person.name }}</h4>
-                    <p>{{ person.character || 'Cast member' }}</p>
-                  </div>
+            <div class="col-md-8 col-lg-9 detail-copy-column">
+              <div class="detail-meta mb-3">
+                <span class="rating-score badge text-bg-warning">{{ selectedMovie.rating }}</span>
+                <button class="reviews-toggle-button" type="button" @click="toggleReviews">
+                  {{ showReviews ? 'Hide Reviews' : 'See Reviews' }}
                 </button>
+                <span>{{ selectedMovie.year }}</span>
+                <span v-if="selectedMovie.runtime">{{ formatRuntime(selectedMovie.runtime) }}</span>
               </div>
-            </div>
+              <h2 class="display-5 fw-bold">{{ selectedMovie.title }}</h2>
+              <p class="lead text-secondary">{{ selectedMovie.overview }}</p>
 
-            <div v-if="similarMovies.length" class="similar-movies-section mt-5">
-              <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
-                <div>
-                  <p class="section-kicker mb-1">More like this</p>
-                  <h3 class="h4 mb-0">Similar Movies</h3>
+              <div class="d-flex flex-wrap gap-2 mb-4">
+                <span v-for="genre in detailGenres" :key="genre.id" class="badge rounded-pill text-bg-secondary">
+                  {{ genre.name }}
+                </span>
+              </div>
+
+              <button
+                v-if="currentUser"
+                class="btn btn-lg"
+                :class="isWatchlisted(selectedMovie.id) ? 'btn-success' : 'btn-warning'"
+                type="button"
+                @click="toggleWatchlist(selectedMovie)"
+              >
+                {{ isWatchlisted(selectedMovie.id) ? 'Remove from Watchlist' : 'Add to Watchlist' }}
+              </button>
+
+              <div v-if="showReviews" class="reviews-section mt-4">
+                <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                  <div>
+                    <p class="section-kicker mb-1">Audience</p>
+                    <h3 class="h4 mb-0">Reviews</h3>
+                  </div>
+                  <span class="text-secondary small">{{ movieReviews.length }} reviews</span>
+                </div>
+
+                <div v-if="movieReviews.length" class="review-list">
+                  <article v-for="review in movieReviews" :key="review.id" class="review-card">
+                    <div class="review-header">
+                      <img
+                        v-if="review.avatarUrl"
+                        class="review-avatar"
+                        :src="review.avatarUrl"
+                        :alt="review.author"
+                      />
+                      <div v-else class="review-avatar review-avatar-placeholder">
+                        {{ initialsFor(review.author) }}
+                      </div>
+                      <div class="review-meta">
+                        <h4>{{ review.author }}</h4>
+                        <p>
+                          <span v-if="review.created_at">{{ formatDate(review.created_at) }}</span>
+                        </p>
+                      </div>
+                      <span v-if="review.rating" class="review-score">{{ review.rating }}/10</span>
+                    </div>
+                    <p class="review-content" :class="{ 'review-content-expanded': expandedReviewIds.includes(review.id) }">
+                      {{ review.content }}
+                    </p>
+                    <button
+                      v-if="review.content?.length > 420"
+                      class="btn btn-sm btn-outline-light"
+                      type="button"
+                      @click="toggleExpandedReview(review.id)"
+                    >
+                      {{ expandedReviewIds.includes(review.id) ? 'Show Less' : 'See Full Review' }}
+                    </button>
+                  </article>
+                </div>
+                <div v-else class="empty-state compact-state">
+                  No reviews found for this movie.
                 </div>
               </div>
 
-              <div class="horizontal-movie-row">
-                <div v-for="movie in similarMovies" :key="movie.id" class="horizontal-movie-item">
-                  <MovieCard
-                    :movie="movie"
-                    :is-watchlisted="isWatchlisted(movie.id)"
-                    :can-use-watchlist="Boolean(currentUser)"
-                    :can-mark-watched="false"
-                    @select="openDetails"
-                    @toggle-watchlist="toggleWatchlist"
-                  />
+              <div class="watch-provider-section mt-5">
+                <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                  <div>
+                    <p class="section-kicker mb-1">Availability</p>
+                    <h3 class="h4 mb-0">Where to Watch</h3>
+                  </div>
+                  <a
+                    v-if="selectedMovie.watchProviders?.link"
+                    class="btn btn-sm btn-outline-light"
+                    :href="selectedMovie.watchProviders.link"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View on TMDB
+                  </a>
+                </div>
+
+                <div v-if="watchProviderGroups.length" class="watch-provider-groups">
+                  <div v-for="group in watchProviderGroups" :key="group.label" class="watch-provider-group">
+                    <h4>{{ group.label }}</h4>
+                    <div class="provider-list">
+                      <div v-for="provider in group.providers" :key="provider.provider_id" class="provider-pill">
+                        <img
+                          v-if="provider.logoUrl"
+                          :src="provider.logoUrl"
+                          :alt="provider.provider_name"
+                        />
+                        <span>{{ provider.provider_name }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="empty-state compact-state">
+                  No US watch providers found for this movie.
+                </div>
+              </div>
+
+              <div v-if="featuredCast.length" class="cast-section mt-5">
+                <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                  <div>
+                    <h3 class="mb-1">Cast</h3>
+                  </div>
+                </div>
+
+                <div class="cast-grid">
+                  <button
+                    v-for="person in featuredCast"
+                    :key="person.cast_id || person.credit_id || person.id"
+                    class="cast-card"
+                    type="button"
+                    @click="openPersonProfile(person)"
+                  >
+                    <img
+                      v-if="person.profileUrl"
+                      class="cast-photo"
+                      :src="person.profileUrl"
+                      :alt="person.name"
+                    />
+                    <div v-else class="cast-photo cast-photo-placeholder">
+                      {{ initialsFor(person.name) }}
+                    </div>
+                    <div class="cast-copy">
+                      <h4>{{ person.name }}</h4>
+                      <p>{{ person.character || 'Cast member' }}</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="similarMovies.length" class="similar-movies-section mt-5">
+                <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                  <div>
+                    <p class="section-kicker mb-1">More like this</p>
+                    <h3 class="h4 mb-0">Similar Movies</h3>
+                  </div>
+                </div>
+
+                <div class="horizontal-movie-row">
+                  <div v-for="movie in similarMovies" :key="movie.id" class="horizontal-movie-item">
+                    <MovieCard
+                      :movie="movie"
+                      :is-watchlisted="isWatchlisted(movie.id)"
+                      :can-use-watchlist="Boolean(currentUser)"
+                      :can-mark-watched="false"
+                      @select="openDetails"
+                      @toggle-watchlist="toggleWatchlist"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </Transition>
 
     <section v-if="selectedPerson || personLoading" class="profile-page">
       <div class="container py-5">
