@@ -86,6 +86,9 @@ export async function saveUserWatchlistMovie(userId, movie) {
     rating: movie.rating || 'NR',
     watched: Boolean(movie.watched),
     watchedAt: movie.watchedAt || null,
+    personalRating: movie.personalRating || null,
+    privateReview: movie.privateReview || '',
+    privateReviewUpdatedAt: movie.privateReviewUpdatedAt || null,
     addedAt: serverTimestamp()
   });
 }

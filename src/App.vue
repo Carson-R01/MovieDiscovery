@@ -296,6 +296,56 @@
                 {{ isWatchlisted(selectedMovie.id) ? 'Remove from Watchlist' : 'Add to Watchlist' }}
               </button>
 
+              <div v-if="canWritePrivateReview" class="private-review-entry mt-4">
+                <button class="btn btn-outline-warning" type="button" @click="togglePrivateReviewForm">
+                  {{ showPrivateReviewForm ? 'Hide Private Review' : privateReviewButtonLabel }}
+                </button>
+              </div>
+
+              <div v-if="canWritePrivateReview && showPrivateReviewForm" class="private-review-section mt-4">
+                <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                  <div>
+                    <p class="section-kicker mb-1">Private</p>
+                    <h3 class="h4 mb-0">Your Rating & Review</h3>
+                  </div>
+                  <span v-if="privateReviewMessage" class="private-review-message">{{ privateReviewMessage }}</span>
+                </div>
+
+                <form class="private-review-form" @submit.prevent="savePrivateReview">
+                  <label>
+                    Rating
+                    <select v-model="personalRating" class="form-select" aria-label="Your personal rating">
+                      <option value="">No rating</option>
+                      <option v-for="score in personalRatingOptions" :key="score" :value="score">
+                        {{ score }}/10
+                      </option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Review
+                    <textarea
+                      v-model="privateReview"
+                      class="form-control"
+                      rows="5"
+                      maxlength="1200"
+                      placeholder="Write private notes about this movie"
+                    ></textarea>
+                  </label>
+
+                  <div class="private-review-actions">
+                    <small>{{ privateReview.length }}/1200</small>
+                    <button class="btn btn-warning" type="submit" :disabled="privateReviewSaving">
+                      {{ privateReviewSaving ? 'Saving...' : 'Save Review' }}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div v-else-if="currentUser && selectedWatchlistMovie && !selectedWatchlistMovie.watched" class="private-review-locked mt-4">
+                Mark this movie as watched from your watchlist to add a private rating and review.
+              </div>
+
               <div v-if="showReviews" class="reviews-section mt-4">
                 <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
                   <div>
@@ -599,6 +649,11 @@ const expandedReviewIds = ref([]);
 const viewMode = ref('home');
 const discoverPage = ref(1);
 const runtimeByMovieId = ref({});
+const personalRating = ref('');
+const privateReview = ref('');
+const privateReviewSaving = ref(false);
+const privateReviewMessage = ref('');
+const showPrivateReviewForm = ref(false);
 let recommendationsRequestId = 0;
 let personRequestId = 0;
 let suggestionsRequestId = 0;
@@ -631,6 +686,26 @@ const sortedMovies = computed(() => {
 const sortedUnwatchedMovies = computed(() => sortMovies(unwatchedMovies.value));
 
 const sortedWatchedMovies = computed(() => sortMovies(watchedMovies.value));
+
+const selectedWatchlistMovie = computed(() => {
+  if (!selectedMovie.value) {
+    return null;
+  }
+
+  return watchlist.value.find((movie) => movie.id === selectedMovie.value.id) || null;
+});
+
+const canWritePrivateReview = computed(() => Boolean(currentUser.value && selectedWatchlistMovie.value?.watched));
+
+const personalRatingOptions = computed(() => Array.from({ length: 10 }, (_, index) => index + 1));
+
+const privateReviewButtonLabel = computed(() => {
+  if (selectedWatchlistMovie.value?.personalRating || selectedWatchlistMovie.value?.privateReview) {
+    return 'Edit Private Review';
+  }
+
+  return 'Add Private Review';
+});
 
 const browsePageNumbers = computed(() => {
   const start = Math.max(1, discoverPage.value - 2);
@@ -828,6 +903,46 @@ async function toggleWatched(movie) {
   loadRecommendations();
 }
 
+async function savePrivateReview() {
+  if (!currentUser.value || !selectedWatchlistMovie.value) {
+    return;
+  }
+
+  authError.value = '';
+  privateReviewMessage.value = '';
+  privateReviewSaving.value = true;
+
+  const updates = {
+    personalRating: personalRating.value ? Number(personalRating.value) : null,
+    privateReview: privateReview.value.trim(),
+    privateReviewUpdatedAt: new Date().toISOString()
+  };
+
+  watchlist.value = watchlist.value.map((item) =>
+    item.id === selectedWatchlistMovie.value.id ? { ...item, ...updates } : item
+  );
+
+  try {
+    await updateUserWatchlistMovie(currentUser.value.uid, selectedWatchlistMovie.value.id, updates);
+    privateReviewMessage.value = 'Saved';
+  } catch (error) {
+    authError.value = error.message || 'Unable to save your private review.';
+    privateReviewMessage.value = '';
+  } finally {
+    privateReviewSaving.value = false;
+  }
+}
+
+function loadPrivateReviewFields() {
+  personalRating.value = selectedWatchlistMovie.value?.personalRating || '';
+  privateReview.value = selectedWatchlistMovie.value?.privateReview || '';
+  privateReviewMessage.value = '';
+}
+
+function togglePrivateReviewForm() {
+  showPrivateReviewForm.value = !showPrivateReviewForm.value;
+}
+
 function openAuthPage() {
   authError.value = '';
   showAuthPage.value = true;
@@ -906,7 +1021,10 @@ async function handleAuthChange(user) {
     watchlist.value = cloudWatchlist.map((movie) => ({
       ...movie,
       watched: Boolean(movie.watched),
-      watchedAt: normalizeWatchedAt(movie.watchedAt)
+      watchedAt: normalizeWatchedAt(movie.watchedAt),
+      personalRating: movie.personalRating || null,
+      privateReview: movie.privateReview || '',
+      privateReviewUpdatedAt: movie.privateReviewUpdatedAt || null
     }));
     loadRecommendations();
   } catch (error) {
@@ -1057,6 +1175,7 @@ async function openDetails(movie) {
   selectedMovie.value = details || movie;
   showReviews.value = false;
   expandedReviewIds.value = [];
+  showPrivateReviewForm.value = false;
   if (details?.runtime) {
     runtimeByMovieId.value = {
       ...runtimeByMovieId.value,
@@ -1101,6 +1220,7 @@ function closeDetails() {
   selectedPerson.value = null;
   showReviews.value = false;
   expandedReviewIds.value = [];
+  showPrivateReviewForm.value = false;
   window.history.pushState({}, '', window.location.pathname);
 }
 
@@ -1110,6 +1230,7 @@ function showWatchlist() {
   selectedPerson.value = null;
   showReviews.value = false;
   expandedReviewIds.value = [];
+  showPrivateReviewForm.value = false;
   window.history.pushState({}, '', window.location.pathname);
 }
 
@@ -1119,6 +1240,7 @@ function showHome() {
   selectedPerson.value = null;
   showReviews.value = false;
   expandedReviewIds.value = [];
+  showPrivateReviewForm.value = false;
   window.history.pushState({}, '', window.location.pathname);
 }
 
@@ -1130,6 +1252,7 @@ async function syncDetailsFromHash() {
     selectedPerson.value = null;
     showReviews.value = false;
     expandedReviewIds.value = [];
+    showPrivateReviewForm.value = false;
     return;
   }
 
@@ -1137,6 +1260,7 @@ async function syncDetailsFromHash() {
   selectedMovie.value = details;
   showReviews.value = false;
   expandedReviewIds.value = [];
+  showPrivateReviewForm.value = false;
 }
 
 onMounted(async () => {
@@ -1167,6 +1291,11 @@ watch(searchTerm, (query) => {
     loadSearchSuggestions(query);
   }, 250);
 });
+
+watch(
+  () => [selectedMovie.value?.id, selectedWatchlistMovie.value?.personalRating, selectedWatchlistMovie.value?.privateReview],
+  loadPrivateReviewFields
+);
 
 onUnmounted(() => {
   unsubscribeFromUser?.();

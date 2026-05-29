@@ -20,6 +20,9 @@
       <p v-if="movie.watched && movie.watchedAt" class="watched-date small">
         Watched {{ movie.watchedAt }}
       </p>
+      <p v-if="movie.watched && movie.personalRating" class="personal-rating-note small">
+        Your rating: {{ movie.personalRating }}/10
+      </p>
 
       <div class="mt-auto d-grid gap-2">
         <button class="btn btn-sm btn-outline-light" type="button" @click="$emit('select', movie)">
