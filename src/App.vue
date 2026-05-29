@@ -12,13 +12,18 @@
               Sign in
             </button>
             <div v-else class="account-pill">
-              <img
-                v-if="currentUser.photoURL"
-                class="account-avatar"
-                :src="currentUser.photoURL"
-                :alt="currentUser.displayName || currentUser.email"
-              />
-              <span>{{ currentUser.displayName || currentUser.email }}</span>
+              <button class="account-profile-button" type="button" @click="showProfile">
+                <img
+                  v-if="currentUser.photoURL"
+                  class="account-avatar"
+                  :src="currentUser.photoURL"
+                  :alt="currentUser.displayName || currentUser.email"
+                />
+                <span v-else class="account-avatar account-avatar-placeholder">
+                  {{ initialsFor(currentUser.displayName || currentUser.email || 'User') }}
+                </span>
+                <span>{{ currentUser.displayName || currentUser.email }}</span>
+              </button>
               <button class="btn btn-sm btn-outline-light" type="button" @click="logout">Sign out</button>
             </div>
             <button v-if="currentUser" class="btn btn-warning" type="button" @click="showWatchlist">
@@ -41,7 +46,7 @@
 
     <section class="content-band">
       <div class="container py-4 py-lg-5">
-        <div class="toolbar mb-4">
+        <div v-if="viewMode !== 'profile'" class="toolbar mb-4">
           <form class="search-form" @submit.prevent="runSearch">
             <div class="search-suggest">
               <input
@@ -95,10 +100,10 @@
 
         <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
           <div>
-            <p class="section-kicker mb-1">{{ viewMode === 'watchlist' ? 'Saved picks' : 'Browse' }}</p>
+            <p class="section-kicker mb-1">{{ viewMode === 'watchlist' ? 'Saved picks' : viewMode === 'profile' ? 'Account' : 'Browse' }}</p>
             <h2 class="h3 mb-0">{{ pageTitle }}</h2>
           </div>
-          <button v-if="viewMode === 'watchlist'" class="btn btn-outline-light" type="button" @click="showHome">
+          <button v-if="viewMode === 'watchlist' || viewMode === 'profile'" class="btn btn-outline-light" type="button" @click="showHome">
             Back to Movies
           </button>
           <button v-else class="btn btn-outline-light" type="button" @click="browseAllMovies">
@@ -181,6 +186,91 @@
               </div>
             </div>
           </section>
+
+        </div>
+        <div v-else-if="viewMode === 'profile'" class="profile-dashboard">
+          <section class="profile-summary">
+            <div class="profile-identity">
+              <img
+                v-if="currentUser?.photoURL"
+                class="profile-avatar"
+                :src="currentUser.photoURL"
+                :alt="currentUser.displayName || currentUser.email"
+              />
+              <div v-else class="profile-avatar profile-avatar-placeholder">
+                {{ initialsFor(currentUser?.displayName || currentUser?.email || 'User') }}
+              </div>
+              <div>
+                <p class="section-kicker mb-1">Profile</p>
+                <h3>{{ currentUser?.displayName || currentUser?.email }}</h3>
+                <p>{{ watchedMovies.length }} watched · {{ watchlist.length }} saved · {{ userPlaylists.length }} playlists</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="playlist-manager">
+            <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+              <div>
+                <p class="section-kicker mb-1">Playlists</p>
+                <h3 class="h4 mb-0">Create Your Own Lists</h3>
+              </div>
+              <span v-if="playlistMessage" class="private-review-message">{{ playlistMessage }}</span>
+            </div>
+
+            <form class="playlist-form" @submit.prevent="createPlaylist">
+              <input
+                v-model="newPlaylistName"
+                class="form-control form-control-lg"
+                type="text"
+                maxlength="40"
+                placeholder="Playlist name"
+                aria-label="Playlist name"
+              />
+              <button class="btn btn-warning btn-lg" type="submit">Create Playlist</button>
+            </form>
+          </section>
+
+          <section v-if="userPlaylists.length === 0" class="empty-state">
+            <div class="empty-state-content">
+              <div class="empty-state-icon">LIST</div>
+              <h3>No playlists yet</h3>
+              <p>Create a playlist here, then add movies to it from their detail pages.</p>
+            </div>
+          </section>
+
+          <section v-for="list in customListSections" :key="list.name" class="watchlist-group">
+            <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+              <div>
+                <p class="section-kicker mb-1">Playlist</p>
+                <h3 class="h4 mb-0">{{ list.name }}</h3>
+              </div>
+              <div class="playlist-heading-actions">
+                <span class="text-secondary small">{{ list.movies.length }} movies</span>
+                <button class="btn btn-sm btn-outline-light" type="button" @click="deletePlaylist(list.name)">Delete</button>
+              </div>
+            </div>
+
+            <div v-if="list.movies.length === 0" class="empty-state compact-state">
+              <div class="empty-state-content">
+                <div class="empty-state-icon">ADD</div>
+                <h3>This playlist is empty</h3>
+                <p>Add watchlisted movies to this playlist from their detail pages.</p>
+              </div>
+            </div>
+            <div v-else class="row g-4">
+              <div v-for="movie in list.movies" :key="`${list.name}-${movie.id}`" class="col-6 col-md-4 col-lg-3 col-xl-2">
+                <MovieCard
+                  :movie="movie"
+                  :is-watchlisted="isWatchlisted(movie.id)"
+                  :can-use-watchlist="Boolean(currentUser)"
+                  :can-mark-watched="Boolean(currentUser)"
+                  @select="openDetails"
+                  @toggle-watchlist="toggleWatchlist"
+                  @toggle-watched="toggleWatched"
+                />
+              </div>
+            </div>
+          </section>
         </div>
         <div v-else-if="sortedMovies.length === 0" class="empty-state">
           <div class="empty-state-content">
@@ -226,7 +316,7 @@
           </button>
         </div>
 
-        <div v-if="watchlist.length" class="recommendations-section">
+        <div v-if="viewMode !== 'profile' && watchlist.length" class="recommendations-section">
           <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
             <div>
               <p class="section-kicker mb-1">For your watchlist</p>
@@ -330,6 +420,32 @@
               >
                 {{ isWatchlisted(selectedMovie.id) ? 'Remove from Watchlist' : 'Add to Watchlist' }}
               </button>
+
+              <div v-if="currentUser && selectedWatchlistMovie" class="custom-list-panel mt-4">
+                <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                  <div>
+                    <p class="section-kicker mb-1">Lists</p>
+                    <h3 class="h4 mb-0">Custom Lists</h3>
+                  </div>
+                  <span v-if="customListMessage" class="private-review-message">{{ customListMessage }}</span>
+                </div>
+
+                <div class="custom-list-buttons">
+                  <button
+                    v-for="list in userPlaylists"
+                    :key="list"
+                    class="custom-list-button"
+                    :class="{ 'custom-list-button-active': movieIsInCustomList(list) }"
+                    type="button"
+                    @click="toggleCustomList(list)"
+                  >
+                    {{ list }}
+                  </button>
+                </div>
+                <p v-if="userPlaylists.length === 0" class="custom-list-empty mb-0">
+                  Create playlists from your profile, then add this movie to them here.
+                </p>
+              </div>
 
               <div v-if="canWritePrivateReview" class="private-review-entry mt-4">
                 <button class="btn btn-outline-warning" type="button" @click="togglePrivateReviewForm">
@@ -660,8 +776,10 @@ import {
 } from './services/tmdb';
 import {
   createAccountWithEmail,
+  loadUserProfile,
   loadUserWatchlist,
   removeUserWatchlistMovie,
+  saveUserPlaylists,
   saveUserWatchlistMovie,
   signInWithEmail,
   signInWithGoogle,
@@ -702,6 +820,10 @@ const privateReview = ref('');
 const privateReviewSaving = ref(false);
 const privateReviewMessage = ref('');
 const showPrivateReviewForm = ref(false);
+const customListMessage = ref('');
+const userPlaylists = ref([]);
+const newPlaylistName = ref('');
+const playlistMessage = ref('');
 let recommendationsRequestId = 0;
 let personRequestId = 0;
 let suggestionsRequestId = 0;
@@ -735,6 +857,13 @@ const sortedMovies = computed(() => {
 const sortedUnwatchedMovies = computed(() => sortMovies(unwatchedMovies.value).map(withCardMetadata));
 
 const sortedWatchedMovies = computed(() => sortMovies(watchedMovies.value).map(withCardMetadata));
+
+const customListSections = computed(() =>
+  userPlaylists.value.map((name) => ({
+    name,
+    movies: sortMovies(watchlist.value.filter((movie) => movie.customLists?.includes(name))).map(withCardMetadata)
+  }))
+);
 
 const selectedWatchlistMovie = computed(() => {
   if (!selectedMovie.value) {
@@ -788,6 +917,10 @@ function sortMovies(movieList) {
 const pageTitle = computed(() => {
   if (viewMode.value === 'watchlist') {
     return 'Your Watchlist';
+  }
+
+  if (viewMode.value === 'profile') {
+    return 'Your Profile';
   }
 
   if (viewMode.value === 'browse-all') {
@@ -894,6 +1027,10 @@ function withCardMetadata(movie) {
   };
 }
 
+function movieIsInCustomList(listName) {
+  return selectedWatchlistMovie.value?.customLists?.includes(listName) || false;
+}
+
 function formatRuntime(minutes) {
   const runtime = Number(minutes);
 
@@ -989,10 +1126,100 @@ async function savePrivateReview() {
   }
 }
 
+async function toggleCustomList(listName) {
+  if (!currentUser.value || !selectedWatchlistMovie.value) {
+    return;
+  }
+
+  authError.value = '';
+  customListMessage.value = '';
+
+  const currentLists = selectedWatchlistMovie.value.customLists || [];
+  const isInList = currentLists.includes(listName);
+
+  const nextLists = isInList
+    ? currentLists.filter((list) => list !== listName)
+    : [...currentLists, listName];
+
+  watchlist.value = watchlist.value.map((item) =>
+    item.id === selectedWatchlistMovie.value.id ? { ...item, customLists: nextLists } : item
+  );
+
+  try {
+    await updateUserWatchlistMovie(currentUser.value.uid, selectedWatchlistMovie.value.id, { customLists: nextLists });
+    customListMessage.value = isInList ? 'Removed' : 'Added';
+  } catch (error) {
+    authError.value = error.message || 'Unable to update custom list.';
+    customListMessage.value = '';
+  }
+}
+
+async function createPlaylist() {
+  const name = newPlaylistName.value.trim().replace(/\s+/g, ' ');
+
+  authError.value = '';
+  playlistMessage.value = '';
+
+  if (!currentUser.value || !name) {
+    return;
+  }
+
+  if (userPlaylists.value.some((playlist) => playlist.toLowerCase() === name.toLowerCase())) {
+    playlistMessage.value = 'Playlist already exists';
+    return;
+  }
+
+  const nextPlaylists = [...userPlaylists.value, name];
+  userPlaylists.value = nextPlaylists;
+  newPlaylistName.value = '';
+
+  try {
+    await saveUserPlaylists(currentUser.value.uid, nextPlaylists);
+    playlistMessage.value = 'Playlist created';
+  } catch (error) {
+    authError.value = error.message || 'Unable to create playlist.';
+    playlistMessage.value = '';
+  }
+}
+
+async function deletePlaylist(name) {
+  if (!currentUser.value) {
+    return;
+  }
+
+  authError.value = '';
+  playlistMessage.value = '';
+
+  const nextPlaylists = userPlaylists.value.filter((playlist) => playlist !== name);
+  const affectedMovies = watchlist.value.filter((movie) => movie.customLists?.includes(name));
+
+  userPlaylists.value = nextPlaylists;
+  watchlist.value = watchlist.value.map((movie) => ({
+    ...movie,
+    customLists: movie.customLists?.filter((playlist) => playlist !== name) || []
+  }));
+
+  try {
+    await saveUserPlaylists(currentUser.value.uid, nextPlaylists);
+    await Promise.all(
+      affectedMovies.map((movie) =>
+        updateUserWatchlistMovie(currentUser.value.uid, movie.id, {
+          customLists: movie.customLists.filter((playlist) => playlist !== name)
+        })
+      )
+    );
+    playlistMessage.value = 'Playlist deleted';
+  } catch (error) {
+    authError.value = error.message || 'Unable to delete playlist.';
+    playlistMessage.value = '';
+  }
+}
+
 function loadPrivateReviewFields() {
   personalRating.value = selectedWatchlistMovie.value?.personalRating || '';
   privateReview.value = selectedWatchlistMovie.value?.privateReview || '';
   privateReviewMessage.value = '';
+  customListMessage.value = '';
 }
 
 function togglePrivateReviewForm() {
@@ -1063,25 +1290,28 @@ async function handleAuthChange(user) {
   authError.value = '';
 
   if (!user) {
-    if (viewMode.value === 'watchlist') {
+    if (viewMode.value === 'watchlist' || viewMode.value === 'profile') {
       viewMode.value = 'home';
     }
 
     watchlist.value = JSON.parse(localStorage.getItem('movie-watchlist') || '[]');
+    userPlaylists.value = [];
     loadRecommendations();
     return;
   }
 
   try {
-    const cloudWatchlist = await loadUserWatchlist(user.uid);
+    const [cloudWatchlist, profile] = await Promise.all([loadUserWatchlist(user.uid), loadUserProfile(user.uid)]);
     watchlist.value = cloudWatchlist.map((movie) => ({
       ...movie,
       watched: Boolean(movie.watched),
       watchedAt: normalizeWatchedAt(movie.watchedAt),
       personalRating: movie.personalRating || null,
       privateReview: movie.privateReview || '',
-      privateReviewUpdatedAt: movie.privateReviewUpdatedAt || null
+      privateReviewUpdatedAt: movie.privateReviewUpdatedAt || null,
+      customLists: Array.isArray(movie.customLists) ? movie.customLists : []
     }));
+    userPlaylists.value = normalizePlaylists(profile.playlists, watchlist.value);
     loadRecommendations();
   } catch (error) {
     authError.value = error.message || 'Unable to load your account watchlist.';
@@ -1120,6 +1350,26 @@ function normalizeWatchedAt(value) {
   }
 
   return null;
+}
+
+function normalizePlaylists(playlists = [], movies = []) {
+  const names = new Set();
+
+  playlists.forEach((playlist) => {
+    if (typeof playlist === 'string' && playlist.trim()) {
+      names.add(playlist.trim());
+    }
+  });
+
+  movies.forEach((movie) => {
+    movie.customLists?.forEach((playlist) => {
+      if (playlist?.trim()) {
+        names.add(playlist.trim());
+      }
+    });
+  });
+
+  return [...names];
 }
 
 function toggleReviews() {
@@ -1338,6 +1588,17 @@ function showWatchlist() {
   showReviews.value = false;
   expandedReviewIds.value = [];
   showPrivateReviewForm.value = false;
+  window.history.pushState({}, '', window.location.pathname);
+}
+
+function showProfile() {
+  viewMode.value = 'profile';
+  selectedMovie.value = null;
+  selectedPerson.value = null;
+  showReviews.value = false;
+  expandedReviewIds.value = [];
+  showPrivateReviewForm.value = false;
+  playlistMessage.value = '';
   window.history.pushState({}, '', window.location.pathname);
 }
 

@@ -26,6 +26,9 @@
       <p v-if="movie.watched && movie.personalRating" class="personal-rating-note small">
         Your rating: {{ movie.personalRating }}/10
       </p>
+      <div v-if="movie.customLists?.length" class="movie-list-badges">
+        <span v-for="list in movie.customLists" :key="list">{{ list }}</span>
+      </div>
 
       <div class="movie-card-actions d-grid gap-2">
         <button class="btn btn-sm btn-outline-light" type="button" @click="$emit('select', movie)">

@@ -9,6 +9,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   serverTimestamp,
   setDoc,
@@ -63,7 +64,34 @@ export async function loadUserWatchlist(userId) {
   }
 
   const snapshot = await getDocs(collection(db, 'users', userId, 'watchlist'));
-  return snapshot.docs.map((item) => item.data());
+  return snapshot.docs
+    .map((item) => item.data())
+    .filter((item) => item.type !== 'profile');
+}
+
+export async function loadUserProfile(userId) {
+  if (!firebaseEnabled || !userId) {
+    return { playlists: [] };
+  }
+
+  const snapshot = await getDoc(doc(db, 'users', userId, 'watchlist', '__profile'));
+  return snapshot.exists() ? snapshot.data() : { playlists: [] };
+}
+
+export async function saveUserPlaylists(userId, playlists) {
+  if (!firebaseEnabled || !userId) {
+    return;
+  }
+
+  await setDoc(
+    doc(db, 'users', userId, 'watchlist', '__profile'),
+    {
+      type: 'profile',
+      playlists,
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
 }
 
 export async function saveUserWatchlistMovie(userId, movie) {
@@ -90,6 +118,7 @@ export async function saveUserWatchlistMovie(userId, movie) {
     personalRating: movie.personalRating || null,
     privateReview: movie.privateReview || '',
     privateReviewUpdatedAt: movie.privateReviewUpdatedAt || null,
+    customLists: movie.customLists || [],
     addedAt: serverTimestamp()
   });
 }

@@ -61,14 +61,31 @@ select {
   display: flex;
   max-width: min(100%, 28rem);
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.35rem 0.35rem 0.35rem 0.7rem;
+  gap: 0.35rem;
+  padding: 0.35rem;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 8px;
   background: rgba(12, 16, 22, 0.76);
 }
 
-.account-pill span {
+.account-profile-button {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.15rem 0.35rem;
+  border: 0;
+  background: transparent;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.account-profile-button:hover,
+.account-profile-button:focus-visible {
+  color: var(--accent);
+}
+
+.account-profile-button span:last-child {
   overflow: hidden;
   max-width: 12rem;
   text-overflow: ellipsis;
@@ -80,6 +97,15 @@ select {
   height: 2rem;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.account-avatar-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--panel-bg-strong);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 900;
 }
 
 .hero-content {
@@ -344,6 +370,26 @@ select {
   margin-top: 0;
 }
 
+.movie-list-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.movie-list-badges span {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.18rem 0.42rem;
+  border: 1px solid rgba(255, 193, 7, 0.28);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .watched-date {
   margin-top: -0.45rem;
   margin-bottom: 0.75rem;
@@ -454,6 +500,66 @@ select {
 .watchlist-group + .watchlist-group {
   padding-top: 3rem;
   border-top: 1px solid #26303f;
+}
+
+.profile-dashboard {
+  display: grid;
+  gap: 3rem;
+}
+
+.profile-summary,
+.playlist-manager {
+  padding: 1.25rem;
+  border: 1px solid #26303f;
+  border-radius: 8px;
+  background: var(--panel-bg);
+}
+
+.profile-identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-identity h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+
+.profile-identity p:last-child {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.profile-avatar {
+  width: 4.25rem;
+  height: 4.25rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-avatar-placeholder {
+  display: grid;
+  place-items: center;
+  background: var(--panel-bg-strong);
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.playlist-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+}
+
+.playlist-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
 }
 
 .detail-page,
@@ -628,6 +734,45 @@ select {
   border: 1px solid #2d3542;
   border-radius: 8px;
   background: var(--panel-bg);
+}
+
+.custom-list-panel {
+  padding: 1.25rem;
+  border: 1px solid #2d3542;
+  border-radius: 8px;
+  background: var(--panel-bg);
+}
+
+.custom-list-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.custom-list-button {
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #3b4657;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-main);
+  font-weight: 800;
+}
+
+.custom-list-button:hover,
+.custom-list-button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.custom-list-button-active {
+  border-color: var(--accent);
+  background: rgba(255, 193, 7, 0.16);
+  color: var(--accent);
+}
+
+.custom-list-empty {
+  color: var(--text-soft);
+  line-height: 1.5;
 }
 
 .private-review-entry {
@@ -961,7 +1106,8 @@ select {
   }
 
   .toolbar,
-  .search-form {
+  .search-form,
+  .playlist-form {
     grid-template-columns: 1fr;
   }
 
@@ -999,13 +1145,17 @@ select {
     max-width: 15rem;
   }
 
-  .account-pill span {
+  .account-profile-button span:last-child {
     max-width: 6.5rem;
   }
 
   .account-pill .btn {
     flex: 0 0 auto;
     white-space: nowrap;
+  }
+
+  .profile-identity {
+    align-items: flex-start;
   }
 
   .movie-card .card-body {
@@ -1087,7 +1237,7 @@ select {
     padding: 0.3rem;
   }
 
-  .account-pill span {
+  .account-profile-button span:last-child {
     display: none;
   }
 
