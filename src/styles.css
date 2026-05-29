@@ -351,6 +351,24 @@ select {
   border-top: 1px solid #26303f;
 }
 
+.tmdb-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #26303f;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.tmdb-footer p {
+  margin: 0;
+}
+
+.tmdb-footer a {
+  color: var(--accent);
+  font-weight: 800;
+}
+
 .watchlist-sections {
   display: grid;
   gap: 3rem;
