@@ -258,6 +258,22 @@ export async function getTrendingMovies() {
   }
 }
 
+export async function discoverMovies(page = 1) {
+  try {
+    const data = await request('/discover/movie', {
+      include_adult: 'false',
+      include_video: 'false',
+      page: String(page),
+      sort_by: 'popularity.desc',
+      vote_count_gte: '25'
+    });
+
+    return data.results.map(normalizeMovie);
+  } catch {
+    return fallbackMovies.map(normalizeMovie);
+  }
+}
+
 export async function searchMovies(query) {
   if (!query.trim()) {
     return getTrendingMovies();

@@ -101,6 +101,9 @@
           <button v-if="viewMode === 'watchlist'" class="btn btn-outline-light" type="button" @click="showHome">
             Back to Movies
           </button>
+          <button v-else class="btn btn-outline-light" type="button" @click="browseAllMovies">
+            Browse All
+          </button>
         </div>
 
         <div v-if="loading" class="loading-state">Loading movies...</div>
@@ -176,6 +179,26 @@
               @toggle-watchlist="toggleWatchlist"
             />
           </div>
+        </div>
+
+        <div v-if="viewMode === 'browse-all' && sortedMovies.length" class="pagination-controls mt-4">
+          <button class="btn btn-outline-light" type="button" :disabled="loading || discoverPage === 1" @click="goToBrowsePage(discoverPage - 1)">
+            Previous
+          </button>
+          <button
+            v-for="page in browsePageNumbers"
+            :key="page"
+            class="btn"
+            :class="page === discoverPage ? 'btn-warning' : 'btn-outline-light'"
+            type="button"
+            :disabled="loading"
+            @click="goToBrowsePage(page)"
+          >
+            {{ page }}
+          </button>
+          <button class="btn btn-outline-light" type="button" :disabled="loading" @click="goToBrowsePage(discoverPage + 1)">
+            Next
+          </button>
         </div>
 
         <div v-if="watchlist.length" class="recommendations-section">
@@ -527,6 +550,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import MovieCard from './components/MovieCard.vue';
 import {
+  discoverMovies,
   getGenres,
   getMovieDetails,
   getPersonProfile,
@@ -571,6 +595,7 @@ const recommendationsLoading = ref(false);
 const showReviews = ref(false);
 const expandedReviewIds = ref([]);
 const viewMode = ref('home');
+const discoverPage = ref(1);
 const runtimeByMovieId = ref({});
 let recommendationsRequestId = 0;
 let personRequestId = 0;
@@ -605,6 +630,11 @@ const sortedUnwatchedMovies = computed(() => sortMovies(unwatchedMovies.value));
 
 const sortedWatchedMovies = computed(() => sortMovies(watchedMovies.value));
 
+const browsePageNumbers = computed(() => {
+  const start = Math.max(1, discoverPage.value - 2);
+  return Array.from({ length: 5 }, (_, index) => start + index);
+});
+
 function sortMovies(movieList) {
   const moviesToSort = [...movieList];
 
@@ -632,6 +662,10 @@ function sortMovies(movieList) {
 const pageTitle = computed(() => {
   if (viewMode.value === 'watchlist') {
     return 'Your Watchlist';
+  }
+
+  if (viewMode.value === 'browse-all') {
+    return 'Browse All Movies';
   }
 
   return searchTerm.value ? `Results for "${searchTerm.value}"` : 'Trending Movies';
@@ -930,6 +964,25 @@ async function runSearch() {
   selectedMovie.value = null;
   suggestionsOpen.value = false;
   movies.value = await searchMovies(searchTerm.value);
+  loading.value = false;
+}
+
+async function browseAllMovies() {
+  viewMode.value = 'browse-all';
+  selectedMovie.value = null;
+  searchTerm.value = '';
+  suggestionsOpen.value = false;
+  await goToBrowsePage(1);
+}
+
+async function goToBrowsePage(page) {
+  if (page < 1) {
+    return;
+  }
+
+  loading.value = true;
+  discoverPage.value = page;
+  movies.value = await discoverMovies(page);
   loading.value = false;
 }
 

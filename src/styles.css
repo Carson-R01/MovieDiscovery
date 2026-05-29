@@ -369,6 +369,14 @@ select {
   font-weight: 800;
 }
 
+.pagination-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
 .watchlist-sections {
   display: grid;
   gap: 3rem;
