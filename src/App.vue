@@ -274,6 +274,7 @@
                 <button class="reviews-toggle-button" type="button" @click="toggleReviews">
                   {{ showReviews ? 'Hide Reviews' : 'See Reviews' }}
                 </button>
+                <span v-if="selectedMovie.contentRating" class="content-rating-badge">{{ selectedMovie.contentRating }}</span>
                 <span>{{ selectedMovie.year }}</span>
                 <span v-if="selectedMovie.runtime">{{ formatRuntime(selectedMovie.runtime) }}</span>
               </div>

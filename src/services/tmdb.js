@@ -24,6 +24,7 @@ export const fallbackMovies = [
     release_date: '2010-07-16',
     vote_average: 8.4,
     runtime: 148,
+    contentRating: 'PG-13',
     genre_ids: [28, 878, 53],
     credits: {
       cast: [
@@ -43,6 +44,7 @@ export const fallbackMovies = [
     release_date: '2014-11-07',
     vote_average: 8.5,
     runtime: 169,
+    contentRating: 'PG-13',
     genre_ids: [12, 18, 878],
     credits: {
       cast: [
@@ -62,6 +64,7 @@ export const fallbackMovies = [
     release_date: '2019-05-30',
     vote_average: 8.5,
     runtime: 133,
+    contentRating: 'R',
     genre_ids: [18, 53],
     credits: {
       cast: [
@@ -81,6 +84,7 @@ export const fallbackMovies = [
     release_date: '2001-07-20',
     vote_average: 8.5,
     runtime: 125,
+    contentRating: 'PG',
     genre_ids: [12, 16],
     credits: {
       cast: [
@@ -172,6 +176,15 @@ function normalizeReview(review) {
   };
 }
 
+function contentRatingFromReleaseDates(releaseDates = {}) {
+  const usReleaseDates = releaseDates.results?.find((region) => region.iso_3166_1 === 'US')?.release_dates || [];
+  const certification =
+    usReleaseDates.find((release) => release.certification && [3, 2, 4, 5, 6, 1].includes(release.type))?.certification ||
+    usReleaseDates.find((release) => release.certification)?.certification;
+
+  return certification || '';
+}
+
 function normalizeMovie(movie) {
   return {
     ...movie,
@@ -179,6 +192,7 @@ function normalizeMovie(movie) {
     backdropUrl: backdropUrl(movie.backdrop_path),
     year: movie.release_date ? movie.release_date.slice(0, 4) : 'TBD',
     rating: movie.vote_average ? movie.vote_average.toFixed(1) : 'NR',
+    contentRating: movie.contentRating || contentRatingFromReleaseDates(movie.release_dates),
     trailer: trailerFromVideos(movie.videos),
     watchProviders: watchProvidersFromResponse(movie['watch/providers']),
     similarMovies: movie.similar?.results?.map(normalizeMovie) || [],
@@ -336,7 +350,7 @@ export async function getGenres() {
 export async function getMovieDetails(id) {
   try {
     const data = await request(`/movie/${id}`, {
-      append_to_response: 'credits,videos,watch/providers,similar,reviews'
+      append_to_response: 'credits,videos,watch/providers,similar,reviews,release_dates'
     });
     return normalizeMovie(data);
   } catch {

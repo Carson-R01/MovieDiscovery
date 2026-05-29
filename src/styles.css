@@ -509,6 +509,18 @@ select {
   line-height: 1;
 }
 
+.content-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.42rem 0.58rem;
+  border: 1px solid #465164;
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .reviews-toggle-button {
   padding: 0.46rem 0.75rem;
   border: 1px solid #3b4657;

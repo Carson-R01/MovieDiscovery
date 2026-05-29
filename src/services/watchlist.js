@@ -84,6 +84,7 @@ export async function saveUserWatchlistMovie(userId, movie) {
     genre_ids: movie.genre_ids || movie.genres?.map((genre) => genre.id) || [],
     year: movie.year || '',
     rating: movie.rating || 'NR',
+    contentRating: movie.contentRating || '',
     watched: Boolean(movie.watched),
     watchedAt: movie.watchedAt || null,
     personalRating: movie.personalRating || null,
