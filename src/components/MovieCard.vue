@@ -17,6 +17,9 @@
       </div>
 
       <p class="text-secondary small mb-3">{{ movie.year }}</p>
+      <p v-if="movie.watched && movie.watchedAt" class="watched-date small">
+        Watched {{ movie.watchedAt }}
+      </p>
 
       <div class="mt-auto d-grid gap-2">
         <button class="btn btn-sm btn-outline-light" type="button" @click="$emit('select', movie)">

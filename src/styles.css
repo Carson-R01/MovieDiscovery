@@ -319,6 +319,13 @@ select {
   line-height: 1.25;
 }
 
+.watched-date {
+  margin-top: -0.45rem;
+  margin-bottom: 0.75rem;
+  color: #78dcca;
+  font-weight: 800;
+}
+
 .rating {
   flex: 0 0 auto;
 }

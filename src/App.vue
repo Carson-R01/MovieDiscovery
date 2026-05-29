@@ -748,12 +748,14 @@ async function toggleWatchlist(movie) {
 async function toggleWatched(movie) {
   authError.value = '';
   const watched = !movie.watched;
+  const watchedAt = watched ? new Date().toISOString() : null;
+  const displayWatchedAt = watched ? formatDate(watchedAt) : null;
   watchlist.value = watchlist.value.map((item) =>
-    item.id === movie.id ? { ...item, watched } : item
+    item.id === movie.id ? { ...item, watched, watchedAt: displayWatchedAt } : item
   );
 
   try {
-    await updateUserWatchlistMovie(currentUser.value?.uid, movie.id, { watched });
+    await updateUserWatchlistMovie(currentUser.value?.uid, movie.id, { watched, watchedAt });
   } catch (error) {
     authError.value = error.message || 'Unable to update watched status.';
   }
@@ -838,7 +840,8 @@ async function handleAuthChange(user) {
     const cloudWatchlist = await loadUserWatchlist(user.uid);
     watchlist.value = cloudWatchlist.map((movie) => ({
       ...movie,
-      watched: Boolean(movie.watched)
+      watched: Boolean(movie.watched),
+      watchedAt: normalizeWatchedAt(movie.watchedAt)
     }));
     loadRecommendations();
   } catch (error) {
@@ -862,6 +865,22 @@ function formatDate(date) {
     day: 'numeric',
     year: 'numeric'
   }).format(new Date(date));
+}
+
+function normalizeWatchedAt(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    return formatDate(value);
+  }
+
+  if (typeof value.toDate === 'function') {
+    return formatDate(value.toDate());
+  }
+
+  return null;
 }
 
 function toggleReviews() {

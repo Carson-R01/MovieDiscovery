@@ -85,6 +85,7 @@ export async function saveUserWatchlistMovie(userId, movie) {
     year: movie.year || '',
     rating: movie.rating || 'NR',
     watched: Boolean(movie.watched),
+    watchedAt: movie.watchedAt || null,
     addedAt: serverTimestamp()
   });
 }
