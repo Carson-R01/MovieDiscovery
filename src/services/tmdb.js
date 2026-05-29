@@ -284,6 +284,30 @@ export async function searchMovies(query) {
   }
 }
 
+export async function getSearchSuggestions(query) {
+  if (query.trim().length < 2) {
+    return [];
+  }
+
+  try {
+    const data = await request('/search/movie', {
+      query,
+      include_adult: 'false'
+    });
+
+    return (data.results || [])
+      .filter((movie) => movie.poster_path)
+      .slice(0, 6)
+      .map(normalizeMovie);
+  } catch {
+    const lowerQuery = query.toLowerCase();
+    return fallbackMovies
+      .filter((movie) => movie.title.toLowerCase().includes(lowerQuery))
+      .slice(0, 6)
+      .map(normalizeMovie);
+  }
+}
+
 export async function getGenres() {
   try {
     const data = await request('/genre/movie/list');

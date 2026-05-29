@@ -122,6 +122,69 @@ select {
   gap: 0.75rem;
 }
 
+.search-suggest {
+  position: relative;
+  min-width: 0;
+}
+
+.suggestions-menu {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 0.45rem);
+  z-index: 10;
+  overflow: hidden;
+  border: 1px solid #2d3542;
+  border-radius: 8px;
+  background: var(--panel-bg);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
+}
+
+.suggestion-item {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 2.4rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem;
+  border: 0;
+  border-bottom: 1px solid #26303f;
+  background: transparent;
+  color: var(--text-main);
+  text-align: left;
+}
+
+.suggestion-item:last-child {
+  border-bottom: 0;
+}
+
+.suggestion-item:hover,
+.suggestion-item:focus-visible {
+  background: var(--panel-bg-strong);
+}
+
+.suggestion-item img {
+  width: 2.4rem;
+  aspect-ratio: 2 / 3;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.suggestion-item span {
+  min-width: 0;
+}
+
+.suggestion-item strong,
+.suggestion-item small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion-item small {
+  color: var(--text-soft);
+}
+
 .form-control,
 .form-select {
   border-color: #2d3542;

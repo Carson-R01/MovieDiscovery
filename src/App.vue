@@ -43,13 +43,33 @@
       <div class="container py-4 py-lg-5">
         <div class="toolbar mb-4">
           <form class="search-form" @submit.prevent="runSearch">
-            <input
-              v-model="searchTerm"
-              class="form-control form-control-lg"
-              type="search"
-              placeholder="Search movies"
-              aria-label="Search movies"
-            />
+            <div class="search-suggest">
+              <input
+                v-model="searchTerm"
+                class="form-control form-control-lg"
+                type="search"
+                placeholder="Search movies"
+                aria-label="Search movies"
+                autocomplete="off"
+                @focus="suggestionsOpen = searchSuggestions.length > 0"
+                @keydown.escape="suggestionsOpen = false"
+              />
+              <div v-if="suggestionsOpen && searchSuggestions.length" class="suggestions-menu">
+                <button
+                  v-for="movie in searchSuggestions"
+                  :key="movie.id"
+                  class="suggestion-item"
+                  type="button"
+                  @mousedown.prevent="selectSuggestion(movie)"
+                >
+                  <img v-if="movie.posterUrl" :src="movie.posterUrl" :alt="movie.title" />
+                  <span>
+                    <strong>{{ movie.title }}</strong>
+                    <small>{{ movie.year }}</small>
+                  </span>
+                </button>
+              </div>
+            </div>
             <button class="btn btn-warning btn-lg" type="submit">Search</button>
           </form>
 
@@ -502,6 +522,7 @@ import {
   getGenres,
   getMovieDetails,
   getPersonProfile,
+  getSearchSuggestions,
   getTrendingMovies,
   getWatchlistRecommendations,
   searchMovies
@@ -523,6 +544,8 @@ const genres = ref([]);
 const watchlist = ref(JSON.parse(localStorage.getItem('movie-watchlist') || '[]'));
 const currentUser = ref(null);
 const searchTerm = ref('');
+const searchSuggestions = ref([]);
+const suggestionsOpen = ref(false);
 const selectedGenre = ref('');
 const sortOption = ref('year');
 const selectedMovie = ref(null);
@@ -543,6 +566,8 @@ const viewMode = ref('home');
 const runtimeByMovieId = ref({});
 let recommendationsRequestId = 0;
 let personRequestId = 0;
+let suggestionsRequestId = 0;
+let suggestionsTimer = null;
 let unsubscribeFromUser = null;
 
 const heroMovie = computed(() => movies.value[0]);
@@ -855,8 +880,28 @@ async function runSearch() {
   loading.value = true;
   viewMode.value = 'home';
   selectedMovie.value = null;
+  suggestionsOpen.value = false;
   movies.value = await searchMovies(searchTerm.value);
   loading.value = false;
+}
+
+async function selectSuggestion(movie) {
+  searchTerm.value = movie.title;
+  suggestionsOpen.value = false;
+  searchSuggestions.value = [];
+  await openDetails(movie);
+}
+
+async function loadSearchSuggestions(query) {
+  const requestId = ++suggestionsRequestId;
+  const suggestions = await getSearchSuggestions(query);
+
+  if (requestId !== suggestionsRequestId) {
+    return;
+  }
+
+  searchSuggestions.value = suggestions;
+  suggestionsOpen.value = suggestions.length > 0 && searchTerm.value.trim().length >= 2;
 }
 
 async function loadRecommendations() {
@@ -1006,8 +1051,23 @@ watch([sortOption, filteredMovies], () => {
   loadRuntimesForCurrentMovies();
 });
 
+watch(searchTerm, (query) => {
+  clearTimeout(suggestionsTimer);
+
+  if (query.trim().length < 2) {
+    searchSuggestions.value = [];
+    suggestionsOpen.value = false;
+    return;
+  }
+
+  suggestionsTimer = setTimeout(() => {
+    loadSearchSuggestions(query);
+  }, 250);
+});
+
 onUnmounted(() => {
   unsubscribeFromUser?.();
+  clearTimeout(suggestionsTimer);
   window.removeEventListener('popstate', syncDetailsFromHash);
 });
 </script>
