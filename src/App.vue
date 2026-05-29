@@ -243,7 +243,7 @@
                 {{ showReviews ? 'Hide Reviews' : 'See Reviews' }}
               </button>
               <span>{{ selectedMovie.year }}</span>
-              <span v-if="selectedMovie.runtime">{{ selectedMovie.runtime }} min</span>
+              <span v-if="selectedMovie.runtime">{{ formatRuntime(selectedMovie.runtime) }}</span>
             </div>
             <h2 class="display-5 fw-bold">{{ selectedMovie.title }}</h2>
             <p class="lead text-secondary">{{ selectedMovie.overview }}</p>
@@ -717,6 +717,27 @@ function runtimeFor(movie) {
 
 function runtimeForSort(movie, fallback) {
   return runtimeFor(movie) || fallback;
+}
+
+function formatRuntime(minutes) {
+  const runtime = Number(minutes);
+
+  if (!runtime) {
+    return '';
+  }
+
+  const hours = Math.floor(runtime / 60);
+  const remainingMinutes = runtime % 60;
+
+  if (!hours) {
+    return `${remainingMinutes}m`;
+  }
+
+  if (!remainingMinutes) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h ${remainingMinutes}m`;
 }
 
 async function toggleWatchlist(movie) {
