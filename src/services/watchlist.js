@@ -1,4 +1,10 @@
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut
+} from 'firebase/auth';
 import {
   collection,
   deleteDoc,
@@ -25,6 +31,22 @@ export async function signInWithGoogle() {
   }
 
   await signInWithPopup(auth, googleProvider);
+}
+
+export async function signInWithEmail(email, password) {
+  if (!firebaseEnabled) {
+    throw new Error('Firebase is not configured');
+  }
+
+  await signInWithEmailAndPassword(auth, email, password);
+}
+
+export async function createAccountWithEmail(email, password) {
+  if (!firebaseEnabled) {
+    throw new Error('Firebase is not configured');
+  }
+
+  await createUserWithEmailAndPassword(auth, email, password);
 }
 
 export async function signOutUser() {

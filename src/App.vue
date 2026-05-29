@@ -8,7 +8,7 @@
         <nav class="container py-4 d-flex align-items-center justify-content-between gap-3">
           <button class="brand-button" type="button" @click="showHome">Movie Discovery</button>
           <div class="nav-actions">
-            <button v-if="!currentUser" class="btn btn-outline-light" type="button" @click="login">
+            <button v-if="!currentUser" class="btn btn-outline-light" type="button" @click="openAuthPage">
               Sign in
             </button>
             <div v-else class="account-pill">
@@ -438,6 +438,60 @@
         </div>
       </div>
     </section>
+
+    <section v-if="showAuthPage" class="auth-page">
+      <div class="auth-shell">
+        <button class="btn btn-outline-light auth-close" type="button" @click="closeAuthPage">Close</button>
+
+        <div class="auth-panel">
+          <p class="section-kicker mb-1">Account</p>
+          <h2>{{ authMode === 'signin' ? 'Sign in' : 'Create account' }}</h2>
+
+          <form class="auth-form" @submit.prevent="submitEmailAuth">
+            <label>
+              Email
+              <input
+                v-model="authEmail"
+                class="form-control form-control-lg"
+                type="email"
+                autocomplete="email"
+                required
+              />
+            </label>
+
+            <label>
+              Password
+              <input
+                v-model="authPassword"
+                class="form-control form-control-lg"
+                type="password"
+                autocomplete="current-password"
+                minlength="6"
+                required
+              />
+            </label>
+
+            <div v-if="authError" class="alert alert-warning auth-alert" role="alert">
+              {{ authError }}
+            </div>
+
+            <button class="btn btn-warning btn-lg" type="submit" :disabled="authLoading">
+              {{ authLoading ? 'Working...' : authMode === 'signin' ? 'Sign in with Email' : 'Create Account' }}
+            </button>
+          </form>
+
+          <div class="auth-divider"><span>or</span></div>
+
+          <button class="btn btn-outline-light btn-lg w-100" type="button" :disabled="authLoading" @click="loginWithGoogle">
+            Continue with Google
+          </button>
+
+          <button class="auth-mode-button" type="button" @click="toggleAuthMode">
+            {{ authMode === 'signin' ? 'Create an email account' : 'Already have an account? Sign in' }}
+          </button>
+        </div>
+      </div>
+    </section>
   </main>
 </template>
 
@@ -453,9 +507,11 @@ import {
   searchMovies
 } from './services/tmdb';
 import {
+  createAccountWithEmail,
   loadUserWatchlist,
   removeUserWatchlistMovie,
   saveUserWatchlistMovie,
+  signInWithEmail,
   signInWithGoogle,
   signOutUser,
   subscribeToUser,
@@ -473,6 +529,11 @@ const selectedMovie = ref(null);
 const selectedPerson = ref(null);
 const loading = ref(true);
 const authError = ref('');
+const authEmail = ref('');
+const authPassword = ref('');
+const authLoading = ref(false);
+const authMode = ref('signin');
+const showAuthPage = ref(false);
 const personLoading = ref(false);
 const recommendations = ref([]);
 const recommendationsLoading = ref(false);
@@ -675,13 +736,52 @@ async function toggleWatched(movie) {
   loadRecommendations();
 }
 
-async function login() {
+function openAuthPage() {
   authError.value = '';
+  showAuthPage.value = true;
+}
+
+function closeAuthPage() {
+  showAuthPage.value = false;
+  authError.value = '';
+  authPassword.value = '';
+}
+
+function toggleAuthMode() {
+  authError.value = '';
+  authMode.value = authMode.value === 'signin' ? 'create' : 'signin';
+}
+
+async function submitEmailAuth() {
+  authError.value = '';
+  authLoading.value = true;
+
+  try {
+    if (authMode.value === 'signin') {
+      await signInWithEmail(authEmail.value, authPassword.value);
+    } else {
+      await createAccountWithEmail(authEmail.value, authPassword.value);
+    }
+
+    closeAuthPage();
+  } catch (error) {
+    authError.value = error.message || 'Unable to authenticate.';
+  } finally {
+    authLoading.value = false;
+  }
+}
+
+async function loginWithGoogle() {
+  authError.value = '';
+  authLoading.value = true;
 
   try {
     await signInWithGoogle();
+    closeAuthPage();
   } catch (error) {
     authError.value = error.message || 'Unable to sign in.';
+  } finally {
+    authLoading.value = false;
   }
 }
 
