@@ -203,7 +203,7 @@
               <div>
                 <p class="section-kicker mb-1">Profile</p>
                 <h3>{{ currentUser?.displayName || currentUser?.email }}</h3>
-                <p>{{ watchedMovies.length }} watched · {{ watchlist.length }} saved · {{ userPlaylists.length }} playlists</p>
+                <p>{{ watchedMovies.length }} watched · {{ watchlist.length }} saved · {{ userPlaylists.length }} playlists · {{ recentlyViewed.length }} recent</p>
               </div>
             </div>
           </section>
@@ -316,25 +316,16 @@
           </button>
         </div>
 
-        <div v-if="viewMode !== 'profile' && watchlist.length" class="recommendations-section">
+        <div v-if="viewMode === 'home' && recentlyViewedMovies.length" class="recommendations-section">
           <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
             <div>
-              <p class="section-kicker mb-1">For your watchlist</p>
-              <h2 class="h3 mb-0">Recommended Movies</h2>
+              <p class="section-kicker mb-1">Your history</p>
+              <h2 class="h3 mb-0">Recently Viewed</h2>
             </div>
           </div>
 
-          <div v-if="recommendationsLoading" class="loading-state compact-state">Finding similar movies...</div>
-          <div v-else-if="recommendations.length === 0" class="empty-state compact-state">
-            <div class="empty-state-content">
-              <div class="empty-state-icon">MORE</div>
-              <h3>No recommendations yet</h3>
-              <p>Add a few more movies to your watchlist so similar picks have better signals.</p>
-              <button class="btn btn-sm btn-outline-light" type="button" @click="browseAllMovies">Browse All Movies</button>
-            </div>
-          </div>
-          <div v-else class="row g-4">
-            <div v-for="movie in recommendations" :key="movie.id" class="col-6 col-md-4 col-lg-3 col-xl-2">
+          <div class="row g-4">
+            <div v-for="movie in recentlyViewedMovies" :key="`home-recent-${movie.id}`" class="col-6 col-md-4 col-lg-3 col-xl-2">
               <MovieCard
                 :movie="movie"
                 :is-watchlisted="isWatchlisted(movie.id)"
@@ -795,6 +786,7 @@ import {
   loadUserWatchlist,
   removeUserWatchlistMovie,
   saveUserPlaylists,
+  saveUserRecentlyViewed,
   saveUserWatchlistMovie,
   signInWithEmail,
   signInWithGoogle,
@@ -837,6 +829,7 @@ const privateReviewMessage = ref('');
 const showPrivateReviewForm = ref(false);
 const customListMessage = ref('');
 const userPlaylists = ref([]);
+const recentlyViewed = ref([]);
 const newPlaylistName = ref('');
 const playlistMessage = ref('');
 let recommendationsRequestId = 0;
@@ -879,6 +872,8 @@ const customListSections = computed(() =>
     movies: sortMovies(watchlist.value.filter((movie) => movie.customLists?.includes(name))).map(withCardMetadata)
   }))
 );
+
+const recentlyViewedMovies = computed(() => recentlyViewed.value.map(withCardMetadata));
 
 const selectedWatchlistMovie = computed(() => {
   if (!selectedMovie.value) {
@@ -1039,6 +1034,27 @@ function withCardMetadata(movie) {
   return {
     ...movie,
     contentRating: movie.contentRating || contentRatingByMovieId.value[movie.id] || ''
+  };
+}
+
+function recentlyViewedMovieFor(movie) {
+  return {
+    id: movie.id,
+    title: movie.title,
+    overview: movie.overview || '',
+    poster_path: movie.poster_path || '',
+    backdrop_path: movie.backdrop_path || '',
+    posterUrl: movie.posterUrl || '',
+    backdropUrl: movie.backdropUrl || '',
+    homepage: movie.homepage || '',
+    release_date: movie.release_date || '',
+    vote_average: movie.vote_average || 0,
+    genre_ids: movie.genre_ids || movie.genres?.map((genre) => genre.id) || [],
+    year: movie.year || '',
+    rating: movie.rating || 'NR',
+    contentRating: movie.contentRating || '',
+    runtime: movie.runtime || null,
+    viewedAt: new Date().toISOString()
   };
 }
 
@@ -1230,6 +1246,25 @@ async function deletePlaylist(name) {
   }
 }
 
+async function trackRecentlyViewed(movie) {
+  if (!currentUser.value || !movie?.id) {
+    return;
+  }
+
+  const nextRecentlyViewed = [
+    recentlyViewedMovieFor(movie),
+    ...recentlyViewed.value.filter((item) => item.id !== movie.id)
+  ].slice(0, 12);
+
+  recentlyViewed.value = nextRecentlyViewed;
+
+  try {
+    await saveUserRecentlyViewed(currentUser.value.uid, nextRecentlyViewed);
+  } catch (error) {
+    authError.value = error.message || 'Unable to sync recently viewed movies.';
+  }
+}
+
 function loadPrivateReviewFields() {
   personalRating.value = selectedWatchlistMovie.value?.personalRating || '';
   privateReview.value = selectedWatchlistMovie.value?.privateReview || '';
@@ -1311,6 +1346,7 @@ async function handleAuthChange(user) {
 
     watchlist.value = JSON.parse(localStorage.getItem('movie-watchlist') || '[]');
     userPlaylists.value = [];
+    recentlyViewed.value = [];
     loadRecommendations();
     return;
   }
@@ -1327,6 +1363,7 @@ async function handleAuthChange(user) {
       customLists: Array.isArray(movie.customLists) ? movie.customLists : []
     }));
     userPlaylists.value = normalizePlaylists(profile.playlists, watchlist.value);
+    recentlyViewed.value = normalizeRecentlyViewed(profile.recentlyViewed);
     loadRecommendations();
   } catch (error) {
     authError.value = error.message || 'Unable to load your account watchlist.';
@@ -1385,6 +1422,18 @@ function normalizePlaylists(playlists = [], movies = []) {
   });
 
   return [...names];
+}
+
+function normalizeRecentlyViewed(items = []) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  const seen = new Set();
+
+  return items
+    .filter((movie) => movie?.id && !seen.has(movie.id) && seen.add(movie.id))
+    .slice(0, 12);
 }
 
 function toggleReviews() {
@@ -1539,6 +1588,7 @@ async function loadContentRatingsForCurrentMovies() {
 async function openDetails(movie) {
   const details = await getMovieDetails(movie.id);
   selectedMovie.value = details || movie;
+  trackRecentlyViewed(selectedMovie.value);
   showReviews.value = false;
   expandedReviewIds.value = [];
   showPrivateReviewForm.value = false;

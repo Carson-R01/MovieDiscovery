@@ -71,11 +71,11 @@ export async function loadUserWatchlist(userId) {
 
 export async function loadUserProfile(userId) {
   if (!firebaseEnabled || !userId) {
-    return { playlists: [] };
+    return { playlists: [], recentlyViewed: [] };
   }
 
   const snapshot = await getDoc(doc(db, 'users', userId, 'watchlist', '__profile'));
-  return snapshot.exists() ? snapshot.data() : { playlists: [] };
+  return snapshot.exists() ? snapshot.data() : { playlists: [], recentlyViewed: [] };
 }
 
 export async function saveUserPlaylists(userId, playlists) {
@@ -88,6 +88,22 @@ export async function saveUserPlaylists(userId, playlists) {
     {
       type: 'profile',
       playlists,
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
+}
+
+export async function saveUserRecentlyViewed(userId, recentlyViewed) {
+  if (!firebaseEnabled || !userId) {
+    return;
+  }
+
+  await setDoc(
+    doc(db, 'users', userId, 'watchlist', '__profile'),
+    {
+      type: 'profile',
+      recentlyViewed,
       updatedAt: serverTimestamp()
     },
     { merge: true }
